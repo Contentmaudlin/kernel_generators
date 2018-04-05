@@ -21,7 +21,3 @@ private:
 
 class kgens::mapped_gen<T> : kgens::gen<T> { // ?
 };
-
-// how will things like filter() and map() work if user threads?
-// new extended object for map()? should return new generator objects?
-// can we statically ensure that lookback types are not assigned to more than once per yield?
