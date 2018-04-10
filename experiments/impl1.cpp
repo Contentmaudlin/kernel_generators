@@ -14,36 +14,28 @@ protected:
 	Gn(void) : ctr{0} {}
 
 	template <typename Type, int LookbackMax>
-	struct Lookback {
-		std::vector<Type> circular_buf;
+	class Lookback {
+		public:
+			std::vector<Type> circular_buf;
+			const Gn *g;
 
-		Lookback(const Type& init) : circular_buf(LookbackMax, init) {}
+			explicit Lookback(const Gn *g, const Type& init) : circular_buf(LookbackMax, init) {
+				this->g = g;
+			}
 
-		// ideally the user can't access this
-		const Type& get(int lbi, int ctr) const
-		{
-			// static_assert that lbi < LookbackMax
-			return circular_buf[(LookbackMax + ctr - lbi) % LookbackMax];
-		}
+			Type& operator=(const Type& val)
+			{
+				this->circular_buf[g->ctr % LookbackMax] = val;
+				return circular_buf[g->ctr % LookbackMax];
+			}
 
-		void set(const Type& val, int ctr)
-		{
-			circular_buf[ctr % LookbackMax] = val;
-		}
+			Type& operator[](int i) 
+			{
+				if (i > 0) 
+					throw std::invalid_argument("It's called lookback not lookahead!");
+				return circular_buf[(LookbackMax + g->ctr + i) % LookbackMax];
+			}
 	};
-
-	template <typename Type, int LookbackMax>
-	const Type& lb(const struct Lookback<Type, LookbackMax>& lbv, int lbi)
-	{
-		return lbv.get(lbi, ctr);
-	}
-
-	template <typename Type, int LookbackMax>
-	const Type& lset(struct Lookback<Type, LookbackMax>& lbv, const Type& val)
-	{
-		lbv.set(val, ctr);
-		return val;
-	}
 
 public:
 	const Ret yield(void)
@@ -59,11 +51,12 @@ class Fib : public Gn<int> {
 	Lookback<int, 4> i;
 	int iterate(void)
 	{
-		lset(i, lb(i, 1) + lb(i, 2));
-		return lb(i, 0);
+		i = i[-1] + i[-2];
+		return i[0];
 	}
+
 public:
-	Fib(int _i) : Gn{}, i{_i} {}
+	Fib(int _i) : Gn{}, i{this, _i} {}
 };
 
 int main(void)
