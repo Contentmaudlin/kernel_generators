@@ -78,12 +78,12 @@ class Fib : public Gn<int> {
 	Lookback<int, 4> i;
 	int iterate(void)
 	{
-		i = i[-1] + i[-2];
-		return *i;
+		return *i = i[-1] + i[-2];
 	}
 
 public:
 	Fib(int _i) : Gn{i}, i{_i} { }
+	Fib(Fib &f) : Gn{i}, i{f.i} { }
 };
 
 int main(void)
@@ -102,6 +102,12 @@ int main(void)
 	cout << *g << endl;
 
 	cout << endl;
+
+	cout << *k << endl;
+	cout << *k << endl;
+	cout << *k << endl;
+	cout << *k << endl;
+	cout << *k << endl;
 
 	return 0;
 }
