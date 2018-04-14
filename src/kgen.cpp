@@ -1,113 +1,128 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <functional>
 
-using namespace std;
+namespace kgen {
 
-template <typename Ret>
-class Gn {
-protected:
-	virtual Ret iterate(void) = 0;
+    template<typename T>
+    class gen {
+    private:
+        class _lookback {
+        protected:
+            int ctr;
+        public:
+            explicit _lookback(int i) : ctr{i} {}
 
-	class LbInternal {
-		protected:
-			int ctr;
-		public:
-			LbInternal(int i)
-			{
-				this->ctr = i;
-			}
-			void bump() 
-			{
-				this->ctr++;
-			}
-	};
+            void bump() {
+                ++ctr;
+            }
+        };
 
-	vector<std::reference_wrapper<LbInternal>> lbs;
+        std::vector<std::reference_wrapper<_lookback>> lbs;
+        bool init = false;
+        T val;
 
-  Gn(std::initializer_list<std::reference_wrapper<LbInternal>> flist) 
-		: lbs(flist) { }
+    protected:
+        template<typename U, int Max>
+        class lookback : public _lookback {
+        public:
+            std::vector<U> circular_buf;
 
-	template <typename Type, int LookbackMax>
-	class Lookback : public LbInternal {
-		public:
-			std::vector<Type> circular_buf;
+            lookback() : _lookback(0), circular_buf(Max, U{}) {}
 
-			Lookback(const Type& init) : LbInternal(0), 
-			                             circular_buf(LookbackMax, init) { }
+            explicit lookback(const U &init) : _lookback(0), circular_buf(Max, init) {}
 
-			Type& operator=(const Type& val)
-			{
-				this->circular_buf[LbInternal::ctr % LookbackMax] = val;
-				return circular_buf[LbInternal::ctr % LookbackMax];
-			}
+            lookback(lookback &l) : _lookback(l.ctr), circular_buf(l.circular_buf) {}
 
-			Type &operator[](int i)
-			{
-				if (i > 0)
-					throw std::invalid_argument("It's not called lookback not lookahead!");
-				if (i > LookbackMax)
-					throw std::invalid_argument("Can't lookback more than " + LookbackMax);
-				return circular_buf[(LookbackMax + LbInternal::ctr + i) % LookbackMax];
-			}
+            lookback &operator=(const U &val) {
+                circular_buf[_lookback::ctr % Max] = val;
+                return *this;
+            }
 
-			Type &operator*()
-			{
-				return circular_buf[(LookbackMax + LbInternal::ctr) % LookbackMax];
-			}
+            U &operator[](int i) {
+                if (i > 0)
+                    throw std::invalid_argument("It's not called lookback not lookahead!");
+                if (-i > Max)
+                    throw std::invalid_argument(
+                            "Can't lookback more than " + std::to_string(Max) + " (attempted: " + std::to_string(-i) +
+                            ")");
+                return circular_buf[(_lookback::ctr + i + Max) % Max];
+            }
 
-			Lookback(Lookback &l) : LbInternal(l.ctr)
-			{
-				this->circular_buf = l.circular_buf;
-			}
-	};
+            U &operator*() {
+                return circular_buf[_lookback::ctr % Max];
+            }
+        };
 
+        virtual T next() = 0;
+
+        gen(std::initializer_list<std::reference_wrapper<_lookback>> _lbs)
+                : lbs{_lbs} {}
+
+    public:
+        typedef std::input_iterator_tag iterator_category;
+        typedef T value_type;
+
+        const T operator*() {
+            if (!init) {
+                val = next();
+                init = true;
+            }
+            return val;
+        }
+
+        gen &operator++() {
+            for (auto &&l : lbs) l.get().bump();
+            val = next();
+            return *this;
+        }
+
+        gen &operator++(int) {
+            return operator++();
+        }
+    };
+}
+
+class fib_gen : public kgen::gen<int> {
 public:
-	const Ret operator*(void)
-	{
-		Ret ret_buf = iterate();
-		for (LbInternal &l : lbs)
-		{
-			l.bump();
-		}
-		return ret_buf;
-	}
+    fib_gen() : kgen::gen<int>{{x}} {}    // seed state
+private:
+    int next() override {
+        x = x[-1] + x[-2];
+        return *(*x == 0 ? x = 1 : x);
+    }
+
+    lookback<int, 2> x{0}; // x will have a lookback history of 2 iterations
 };
 
-class Fib : public Gn<int> {
-	Lookback<int, 4> i;
-	int iterate(void)
-	{
-		return *i = i[-1] + i[-2];
-	}
 
-public:
-	Fib(int _i) : Gn{i}, i{_i} { }
-	Fib(Fib &f) : Gn{i}, i{f.i} { }
-};
+int main() {
 
-int main(void)
-{
+    fib_gen g;
+    //Fib k = g;
 
-	Fib g{1}; // only ever yield 1
-	Fib k = g;
+    using namespace std;
 
-	cout << *g << endl;
-	cout << *g << endl;
-	cout << *g << endl;
-	cout << *g << endl;
-	cout << *g << endl;
-	cout << *g << endl;
-	cout << *g << endl;
-	cout << *g << endl;
+    cout << *g << endl;
+    cout << *g++ << endl;
+    cout << *g++ << endl;
+    cout << *g++ << endl;
+    cout << *g++ << endl;
+    cout << *g++ << endl;
+    cout << *g++ << endl;
+    cout << *g++ << endl;
+    cout << *g++ << endl;
+    cout << *g++ << endl;
+    cout << *g++ << endl;
 
-	cout << endl;
+    cout << endl;
 
-	cout << *k << endl;
-	cout << *k << endl;
-	cout << *k << endl;
-	cout << *k << endl;
-	cout << *k << endl;
+//    cout << *k << endl;
+//    cout << *k << endl;
+//    cout << *k << endl;
+//    cout << *k << endl;
+//    cout << *k << endl;
 
-	return 0;
+    return 0;
 }
