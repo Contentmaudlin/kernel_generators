@@ -8,43 +8,38 @@ namespace kgen {
     template<typename T>
     class gen {
     private:
-        /* inner classes */
-        class lb_base { // base, non-generic lookback class, to enable storage of many lookback vars
+        /* gen inner classes */
+
+				/* abstract base for lookback class */
+        class lb_base {
         protected:
-            // keep track of position in buffer
             int ctr;
         public:
-            // for lookback cctor
             explicit lb_base(int i) : ctr{i} {}
 
-            // called at end of every op++
             void bump() {
                 ++ctr;
             }
         };
 
-        /* member variables */
+        /* gen member variables */
         std::vector<std::reference_wrapper<lb_base>> lbs;
         bool init = false;
         T val;
 
     protected:
-        /* inner classes */
+        /* gen inner classes */
         template<typename U, int Max>
-        class lookback : public lb_base { // interface usable by classes that extend gen to declare lookback vars
+        class lookback : public lb_base {
         public:
-            /* constructors */
 
-            // default ctor
             lookback() : lb_base(0), buf(Max, U{}) {}
 
-            // init buffer ctor
             explicit lookback(const U &init) : lb_base(0), buf(Max, init) {}
 
-            // copy ctor
             lookback(lookback &l) : lb_base(l.ctr), buf(l.buf) {}
 
-            /* operator overloading */
+            /* lookback operator overloading */
 
             lookback &operator=(const U &val) {
                 buf[lb_base::ctr % Max] = val;
@@ -66,26 +61,26 @@ namespace kgen {
             }
 
         private:
-            /* member variables */
-
+            /* lookback member variables */
             std::vector<U> buf;
         };
 
-        /* member functions and variables */
+        /* gen member functions and variables */
 
         gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs)
                 : lbs{_lbs} {}
 
         virtual T next() = 0;
 
-        bool eog = false; // flag to detect whether at end-of-generator
+				/* end-of-generator flag */
+        bool eog = false;
 
     public:
         /* input iterator typedefs */
         typedef std::input_iterator_tag iterator_category;
         typedef T value_type;
 
-        /* operator overloading */
+        /* gen operator overloading */
         const T operator*() {
             if (!init) {
                 val = next();
@@ -104,7 +99,7 @@ namespace kgen {
             return operator++();
         }
 
-        /* member functions */
+        /* gen member functions */
         bool done() { return eog; }
     };
 
