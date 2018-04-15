@@ -4,66 +4,88 @@
 #include <functional>
 
 namespace kgen {
-
+    /* main generator class */
     template<typename T>
     class gen {
     private:
-        class _lookback {
+        /* inner classes */
+        class lb_base { // base, non-generic lookback class, to enable storage of many lookback vars
         protected:
+            // keep track of position in buffer
             int ctr;
         public:
-            explicit _lookback(int i) : ctr{i} {}
+            // for lookback cctor
+            explicit lb_base(int i) : ctr{i} {}
 
+            // called at end of every op++
             void bump() {
                 ++ctr;
             }
         };
 
-        std::vector<std::reference_wrapper<_lookback>> lbs;
+        /* member variables */
+        std::vector<std::reference_wrapper<lb_base>> lbs;
         bool init = false;
         T val;
 
     protected:
+        /* inner classes */
         template<typename U, int Max>
-        class lookback : public _lookback {
+        class lookback : public lb_base { // interface usable by classes that extend gen to declare lookback vars
         public:
-            std::vector<U> circular_buf;
+            /* constructors */
 
-            lookback() : _lookback(0), circular_buf(Max, U{}) {}
+            // default ctor
+            lookback() : lb_base(0), buf(Max, U{}) {}
 
-            explicit lookback(const U &init) : _lookback(0), circular_buf(Max, init) {}
+            // init buffer ctor
+            explicit lookback(const U &init) : lb_base(0), buf(Max, init) {}
 
-            lookback(lookback &l) : _lookback(l.ctr), circular_buf(l.circular_buf) {}
+            // copy ctor
+            lookback(lookback &l) : lb_base(l.ctr), buf(l.buf) {}
+
+            /* operator overloading */
 
             lookback &operator=(const U &val) {
-                circular_buf[_lookback::ctr % Max] = val;
+                buf[lb_base::ctr % Max] = val;
                 return *this;
             }
 
             U &operator[](int i) {
                 if (i > 0)
-                    throw std::invalid_argument("It's not called lookback not lookahead!");
+                    throw std::invalid_argument("It's called lookback not lookahead!");
                 if (-i > Max)
                     throw std::invalid_argument(
                             "Can't lookback more than " + std::to_string(Max) + " (attempted: " + std::to_string(-i) +
                             ")");
-                return circular_buf[(_lookback::ctr + i + Max) % Max];
+                return buf[(lb_base::ctr + i + Max) % Max];
             }
 
             U &operator*() {
-                return circular_buf[_lookback::ctr % Max];
+                return buf[lb_base::ctr % Max];
             }
+
+        private:
+            /* member variables */
+
+            std::vector<U> buf;
         };
+
+        /* member functions and variables */
+
+        gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs)
+                : lbs{_lbs} {}
 
         virtual T next() = 0;
 
-        gen(std::initializer_list<std::reference_wrapper<_lookback>> _lbs)
-                : lbs{_lbs} {}
+        bool eog = false; // flag to detect whether at end-of-generator
 
     public:
+        /* input iterator typedefs */
         typedef std::input_iterator_tag iterator_category;
         typedef T value_type;
 
+        /* operator overloading */
         const T operator*() {
             if (!init) {
                 val = next();
@@ -81,7 +103,11 @@ namespace kgen {
         gen &operator++(int) {
             return operator++();
         }
+
+        /* member functions */
+        bool done() { return eog; }
     };
+
 }
 
 class fib_gen : public kgen::gen<int> {
@@ -93,7 +119,7 @@ private:
         return *(*x == 0 ? x = 1 : x);
     }
 
-    lookback<int, 2> x{0}; // x will have a lookback history of 2 iterations
+    lookback<int, 2> x; // x will have a lookback history of 2 iterations
 };
 
 
