@@ -2,12 +2,11 @@ CXX = g++
 CXXFLAGS = -g -Wall -std=c++17
 CC = g++
 
-TARGETS = main kgen
+TARGETS = kgen
 
 default: $(TARGETS)
 
-main:
-main.o:
+kgen:
 
 clean:
 	rm -rf $(TARGETS) a.out *.o
