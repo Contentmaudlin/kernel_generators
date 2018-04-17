@@ -13,7 +13,7 @@ namespace kgen {
     private:
         /* gen inner classes */
 
-				/* abstract base for lookback class */
+        /* abstract base for lookback class */
         class lb_base {
         protected:
             int ctr;
@@ -69,22 +69,22 @@ namespace kgen {
         };
 
         /* gen member functions and variables */
-
         gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs)
                 : lbs{_lbs} {}
 
         virtual T next() = 0;
 
-				/* end-of-generator flag */
-        bool eog = false;
+        /* end-of-generator flag */
+        bool end = false;
 
     public:
         /* input iterator typedefs */
+        /* TODO do we need these here?
         typedef std::input_iterator_tag iterator_category;
-        typedef T value_type;
+        typedef T value_type; */
 
         /* gen operator overloading */
-        const T operator*() {
+        const T &operator*() {
             if (!init) {
                 val = next();
                 init = true;
@@ -93,17 +93,17 @@ namespace kgen {
         }
 
         gen &operator++() {
+            if (!init) {
+                val = next();
+                init = true;
+            }
             for (auto &&l : lbs) l.get().bump();
             val = next();
             return *this;
         }
 
-        gen &operator++(int) {
-            return operator++();
-        }
-
         /* gen member functions */
-        bool done() { return eog; }
+        bool at_end() const { return end; } // TODO handle at_end() in op*, op++
     };
 
 }
