@@ -2,7 +2,7 @@
 
 class prime_gen : public kgen::gen<int> {
 public:
-    prime_gen() : kgen::gen<int>{} { x=1; }    // seed state
+    prime_gen() : kgen::gen<int>{} {}    // seed state
 private:
     bool isPrime(int x) {
       for (int i = 2; i <= x / 2; ++i)
@@ -17,5 +17,5 @@ private:
           return x;
     }
 
-    int x;
+    int x{1};
 };
