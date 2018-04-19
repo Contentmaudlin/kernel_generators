@@ -27,7 +27,6 @@ namespace kgen {
 
         /* gen member variables */
         std::vector<std::reference_wrapper<lb_base>> lbs;
-        bool init = false;
 
     protected:
         /* gen inner classes */
@@ -68,10 +67,11 @@ namespace kgen {
         };
 
         /* gen member functions and variables */
-        lookback<T, H> hist;
 
         gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {},
-            T init = T{}) : lbs{_lbs}, hist{init} {}
+            T init = T{}) : lbs{_lbs}, history{init} {}
+
+        T hist(int i) { return this->history[i]; } ;
 
 
         virtual T next() = 0;
@@ -87,19 +87,21 @@ namespace kgen {
 
         /* gen operator overloading */
         const T &operator*() {
-          return *hist;
+          return *history;
         }
 
         gen &operator++() {
             for (auto &&l : lbs) 
               l.get().bump();
-            hist = next();
-            hist.bump();
+            history = next();
+            history.bump();
             return *this;
         }
 
         /* gen member functions */
         bool at_end() const { return end; } // TODO handle at_end() in op*, op++
+    private:
+        lookback<T, H> history;
     };
 
 }

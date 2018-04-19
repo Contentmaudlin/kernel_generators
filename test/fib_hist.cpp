@@ -6,7 +6,7 @@ public:
     fib_hist() : kgen::gen<int, 2>{{}, 1} {}    // seed state
 private:
     int next() override {
-      return hist[-1] + hist[-2];
+      return hist(-1) + hist(-2);
     }
 };
 
