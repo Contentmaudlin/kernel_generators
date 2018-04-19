@@ -8,7 +8,7 @@
 
 namespace kgen {
     /* main generator class */
-    template<typename T>
+    template<typename T, unsigned int H = 1>
     class gen {
     private:
         /* gen inner classes */
@@ -28,7 +28,6 @@ namespace kgen {
         /* gen member variables */
         std::vector<std::reference_wrapper<lb_base>> lbs;
         bool init = false;
-        T val;
 
     protected:
         /* gen inner classes */
@@ -69,8 +68,11 @@ namespace kgen {
         };
 
         /* gen member functions and variables */
-        gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs)
-                : lbs{_lbs} {}
+        lookback<T, H> hist;
+
+        gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {},
+            T init = T{}) : lbs{_lbs}, hist{init} {}
+
 
         virtual T next() = 0;
 
@@ -85,20 +87,14 @@ namespace kgen {
 
         /* gen operator overloading */
         const T &operator*() {
-            if (!init) {
-                val = next();
-                init = true;
-            }
-            return val;
+          return *hist;
         }
 
         gen &operator++() {
-            if (!init) {
-                val = next();
-                init = true;
-            }
-            for (auto &&l : lbs) l.get().bump();
-            val = next();
+            for (auto &&l : lbs) 
+              l.get().bump();
+            hist = next();
+            hist.bump();
             return *this;
         }
 
