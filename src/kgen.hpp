@@ -69,10 +69,9 @@ namespace kgen {
         /* gen member functions and variables */
 
         gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {},
-            T init = T{}) : lbs{_lbs}, history{init} {}
+            T init = T{}) : lbs{_lbs}, history{init} { }
 
         T hist(int i) { return this->history[i]; } ;
-
 
         virtual T next() = 0;
 
@@ -93,8 +92,8 @@ namespace kgen {
         gen &operator++() {
             for (auto &&l : lbs) 
               l.get().bump();
-            history = next();
             history.bump();
+            history = next();
             return *this;
         }
 
