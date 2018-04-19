@@ -39,7 +39,7 @@ CXXFLAGS += -g -Wall -Wextra -std=c++17 -pthread
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = fib fibnobase
+TESTS = fib fibnobase prime
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -52,6 +52,7 @@ all : $(TESTS)
 
 clean :
 	rm -f $(TESTS) gtest.a gtest_main.a *.o
+	rm -f $(SRC_DIR)/*.gch
 
 # Builds gtest.a and gtest_main.a.
 
@@ -90,8 +91,15 @@ fibnobase.o: $(TEST_DIR)/fibnobase.cc \
 								$(USER_DIR)/fibnobase.hpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE) -c $(TEST_DIR)/fibnobase.cc
 
+prime.o: $(TEST_DIR)/prime.cc \
+								$(SRC_DIR)/kgen.hpp $(GTEST_HEADERS) $(USER_DIR)/prime.hpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE) -c $(TEST_DIR)/prime.cc
+
 fib : fib.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 fibnobase : fibnobase.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+prime: prime.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
