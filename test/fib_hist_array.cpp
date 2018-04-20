@@ -1,9 +1,9 @@
 #include <cassert>
 #include "kgen.hpp"
 
-class fib_hist : public kgen::gen<int, 2> {
+class fib_hist_array : public kgen::gen<int, 2> {
 public:
-    fib_hist() : kgen::gen<int, 2>(1) {}    // seed state
+    fib_hist_array() : kgen::gen<int, 2>{{1, 1}} {}    // seed state
 private:
     int next() override {
       return hist(-1) + hist(-2);
@@ -11,10 +11,10 @@ private:
 };
 
 
-int fib_hist_test() {
+int fib_hist_array_test() {
     using namespace std;
 
-    fib_hist g;
+    fib_hist_array g;
 
     cout << *g  << endl;
     cout << *++g  << endl;
@@ -30,7 +30,7 @@ int fib_hist_test() {
     cout << *++g  << endl;
     cout << *++g  << endl;
 
-    cout << "/*** PASSED fib_hist ***/" << endl;
+    cout << "/*** PASSED fib_hist_array ***/" << endl;
 
     return 0;
 }

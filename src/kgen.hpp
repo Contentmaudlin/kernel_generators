@@ -36,7 +36,10 @@ namespace kgen {
 
             lookback() : lb_base(0), buf(Max, U{}) {}
 
-            explicit lookback(const U &init) : lb_base(0), buf(Max, init) {}
+            explicit lookback(const U &init) : lb_base(0), buf(Max, init) { }
+
+            explicit lookback(const U(& arr)[Max]) : lb_base(0),
+                buf(std::begin(arr), std::end(arr)) {}
 
             lookback(lookback &l) : lb_base(l.ctr), buf(l.buf) {}
 
@@ -68,8 +71,16 @@ namespace kgen {
 
         /* gen member functions and variables */
 
-        gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {},
-            T init = T{}) : lbs{_lbs}, history{init} { }
+        gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs) 
+            : lbs{_lbs}, history{T{}} { }
+
+        gen(T init = T{},
+            std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {})
+            : lbs{_lbs}, history(init) { }
+
+        gen(const T(& arr)[H],
+            std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) 
+            : lbs{_lbs}, history{arr} { }
 
         T hist(int i) { return this->history[i]; } ;
 
