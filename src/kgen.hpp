@@ -34,12 +34,12 @@ namespace kgen {
         class lookback : public lb_base {
         public:
 
-            lookback() : lb_base(0), buf(Max, U{}) {}
+            lookback() : lb_base(0), buf(Max + 1, U{}) {}
 
-            explicit lookback(const U &init) : lb_base(0), buf(Max, init) { }
+            explicit lookback(const U &init) : lb_base(0), buf(Max + 1, init) { }
 
             explicit lookback(const U(& arr)[Max]) : lb_base(0),
-                buf(std::begin(arr), std::end(arr)) {}
+                buf(1, U{}) { std::copy( &arr[0], &arr[Max], std::back_inserter(buf)); }
 
             lookback(lookback &l) : lb_base(l.ctr), buf(l.buf) {}
 
@@ -94,7 +94,6 @@ namespace kgen {
         /* TODO do we need these here?
         typedef std::input_iterator_tag iterator_category;
         typedef T value_type; */
-
         /* gen operator overloading */
         const T &operator*() {
           return *history;
