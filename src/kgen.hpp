@@ -17,11 +17,13 @@ namespace kgen {
         class lb_base {
         protected:
             int ctr;
+            bool set = true;
         public:
             explicit lb_base(int i) : ctr{i} {}
 
             void bump() {
                 ++ctr;
+                set = false;
             }
         };
 
@@ -47,6 +49,7 @@ namespace kgen {
 
             lookback &operator=(const U &val) {
                 buf[lb_base::ctr % Max] = val;
+                lb_base::set = true;
                 return *this;
             }
 
@@ -55,18 +58,23 @@ namespace kgen {
                     throw std::invalid_argument("It's called lookback not lookahead!");
                 if (-i > Max)
                     throw std::invalid_argument(
-                            "Can't lookback more than " + std::to_string(Max) + " (attempted: " + std::to_string(-i) +
-                            ")");
+                            "Can't lookback more than " + std::to_string(Max) + 
+                            " (attempted: " + std::to_string(-i) + ")");
+                if (i == 0 && !lb_base::set)
+                  throw std::runtime_error("Uninitialized variable");
                 return buf[(lb_base::ctr + i + Max) % Max];
             }
 
             U &operator*() {
-                return buf[lb_base::ctr % Max];
+              if (!lb_base::set)
+                throw std::runtime_error("Uninitialized variable");
+              return buf[lb_base::ctr % Max];
             }
 
         private:
             /* lookback member variables */
             std::vector<U> buf;
+
         };
 
         /* gen member functions and variables */
