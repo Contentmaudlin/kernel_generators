@@ -4,89 +4,133 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <exception>
 #include <functional>
 
 namespace kgen {
     /* main generator class */
-    template<typename T>
+    template<typename T, int N = 0> // TODO IMPLEMENT LOOKBACK GENERATOR
     class gen {
     private:
-        /* gen inner classes */
+        class eog_tag {
+        };
+
+        constexpr explicit gen(eog_tag) : eog{true} {}
+
+        static const gen &get_eog() {
+            static gen terminal{eog_tag{}}; // naming - terminal->eog and eog->eog_ TODO
+            return terminal;
+        }
+
+        class generable {
+            friend class gen;
+
+            gen &g;
+        public:
+            explicit generable(gen &g_) : g{g_} {}
+
+            gen &begin() { return g; }
+
+            const gen &end() { return get_eog(); }
+        };
 
         /* abstract base for lookback class */
         class lb_base {
         protected:
             int ctr;
+            bool can_read;
         public:
-            explicit lb_base(int i) : ctr{i} {}
+            explicit lb_base(int i) : ctr{i}, can_read{false} {}
 
             void bump() {
                 ++ctr;
+                can_read = false;
             }
         };
 
         /* gen member variables */
         std::vector<std::reference_wrapper<lb_base>> lbs;
         bool init = false;
+        bool eog = false;
         T val;
 
+        void set_next() {
+            try {
+                val = next();
+            } catch (reached_eog &e) { eog = true; }
+        }
+
     protected:
+        class reached_eog : public std::exception {
+            const char *what() const throw() override {
+                return "lol sry";
+            }
+        };
+
         /* gen inner classes */
-        template<typename U, int Max>
+        template<typename U, int Max = 1>
         class lookback : public lb_base {
         public:
 
-            lookback() : lb_base(0), buf(Max, U{}) {}
+            lookback() : lb_base(0) { for (auto &x : buf) x = U{}; }
 
-            explicit lookback(const U &init) : lb_base(0), buf(Max, init) {}
+            explicit lookback(const U &init) : lb_base(0) { for (auto &x : buf) x = init; }
+
+            explicit lookback(const U(&arr)[Max]) : lb_base(0),
+                                                    buf{arr} {
+                //std::copy(&arr[0], &arr[Max], std::back_inserter(buf));
+            }
 
             lookback(lookback &l) : lb_base(l.ctr), buf(l.buf) {}
 
             /* lookback operator overloading */
 
             lookback &operator=(const U &val) {
-                buf[lb_base::ctr % Max] = val;
+                buf[lb_base::ctr % (Max + 1)] = val;
+                lb_base::can_read = true;
                 return *this;
             }
 
-            U &operator[](int i) {
+            const U &operator[](int i) {
                 if (i > 0)
                     throw std::invalid_argument("It's called lookback not lookahead!");
+                if (i == 0 && !lb_base::can_read)
+                    throw std::invalid_argument("Can't read from unassigned value!");
                 if (-i > Max)
                     throw std::invalid_argument(
                             "Can't lookback more than " + std::to_string(Max) + " (attempted: " + std::to_string(-i) +
                             ")");
-                return buf[(lb_base::ctr + i + Max) % Max];
+                return buf[(lb_base::ctr + i + Max + 1) % (Max + 1)];
             }
 
-            U &operator*() {
-                return buf[lb_base::ctr % Max];
+            const U &operator*() {
+                if (!lb_base::can_read) throw std::invalid_argument("Can't read from unassigned value!");
+                return buf[lb_base::ctr % (Max + 1)];
             }
 
         private:
             /* lookback member variables */
-            std::vector<U> buf;
+            std::array<U, Max + 1> buf;
         };
 
         /* gen member functions and variables */
         gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs)
                 : lbs{_lbs} {}
 
-        virtual T next() = 0;
+        virtual T next() {
+            throw std::out_of_range("Generator at end, can't read!");
+        }
 
-        /* end-of-generator flag */
-        bool end = false;
+        //void set_eog() { eog = true; }
 
     public:
-        /* input iterator typedefs */
-        /* TODO do we need these here?
         typedef std::input_iterator_tag iterator_category;
-        typedef T value_type; */
+        typedef T value_type;
 
         /* gen operator overloading */
         const T &operator*() {
             if (!init) {
-                val = next();
+                set_next();
                 init = true;
             }
             return val;
@@ -94,16 +138,22 @@ namespace kgen {
 
         gen &operator++() {
             if (!init) {
-                val = next();
+                set_next();
                 init = true;
             }
             for (auto &&l : lbs) l.get().bump();
-            val = next();
+            set_next();
             return *this;
         }
 
-        /* gen member functions */
-        bool at_end() const { return end; } // TODO handle at_end() in op*, op++
+        bool at_eog() { return eog; }
+
+        generable forall() { return generable{*this}; }
+
+        bool operator==(const gen &rhs) { return eog && rhs.eog; }
+
+        bool operator!=(const gen &rhs) { return !eog || !rhs.eog; } // DeMorgan's law, look it up ;^)
+
     };
 
 }
