@@ -18,35 +18,34 @@ namespace kgen {
         class eog_tag {
         };
 
-        static gen &get_eog() {
-            static gen terminal{eog_tag{}}; // naming - terminal->eog and eog->eog_ TODO
-            return terminal;
-        }
+        class gen_ref : public std::reference_wrapper<gen> {
+        public:
+            const T &operator*() { return *this->get(); }
 
-	   struct gen_ref :  std::reference_wrapper<gen> { 
-		 const T& operator*(void) { return *this->get(); }
-		 void operator++(void) { ++this->get(); }
-		 bool operator==(gen& other) { return this->get() == other; }
-		 bool operator==(gen_ref& other) { return this->get() == other.get(); }
- 	 	 bool operator!=(gen& other) { return this->get() != other; }
-	 	 bool operator!=(gen_ref& other) { return this->get() != other.get(); }
-	   }; 
+            void operator++() { ++this->get(); }
 
-       class generable {
-           friend class gen;
+            bool operator==(gen &other) { return this->get() == other; }
 
-           gen &g;
-       public:
-           explicit generable(gen &g_) : g{g_} {}
+            bool operator==(gen_ref &other) { return this->get() == other.get(); }
 
-           gen_ref begin() { 
-             return gen_ref{g}; 
-           }
+            bool operator!=(gen &other) { return this->get() != other; }
 
-           const gen_ref end() { 
-             return gen_ref {get_eog()} ; // std::reference_wrapper<gen>{ get_eog() }; 
-           }
-       };
+            bool operator!=(gen_ref &other) { return this->get() != other.get(); }
+        };
+
+        class generable {
+            gen &g;
+        public:
+            explicit generable(gen &g_) : g{g_} {}
+
+            gen_ref begin() {
+                return gen_ref{g};
+            }
+
+            const gen_ref end() {
+                return gen_ref {eog_gen()};
+            }
+        };
 
         class lb_base {
         protected:
@@ -122,12 +121,12 @@ namespace kgen {
 
         //  member functions
     private:
-        constexpr explicit gen(eog_tag) : eog{true} {}
-
-        static const gen &eog_gen() {
-            static gen terminal{eog_tag{}}; // TODO naming
+        static gen &eog_gen() {
+            static gen terminal{eog_tag{}}; // naming - terminal->eog and eog->eog_ TODO
             return terminal;
         }
+
+        constexpr explicit gen(eog_tag) : eog{true} {}
 
         void set_next() {
             try {
@@ -178,9 +177,9 @@ namespace kgen {
         bool operator==(const gen &rhs) { return eog && rhs.eog; }
 
         bool operator!=(const gen &rhs) { return !eog || !rhs.eog; } // DeMorgan's law, look it up ;^)
-        gen (const gen&) = delete;
+        gen(const gen &) = delete;
 
-        gen& operator=(const gen&) = delete;
+        gen &operator=(const gen &) = delete;
         // member variables
     private:
         std::vector<std::reference_wrapper<lb_base>> lbs;
