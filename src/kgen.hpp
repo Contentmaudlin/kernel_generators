@@ -22,7 +22,10 @@ namespace kgen {
         public:
             const T &operator*() { return *this->get(); }
 
-            void operator++() { ++this->get(); }
+            gen_ref &operator++(void) {
+                ++this->get();
+                return *this;
+            }
 
             bool operator==(gen &other) { return this->get() == other; }
 
