@@ -25,7 +25,7 @@ namespace kgen {
 
 	   struct gen_ref :  std::reference_wrapper<gen> { 
 		 const T& operator*(void) { return *this->get(); }
-		 void operator++(void) { ++this->get(); }
+		 gen_ref &operator++(void) { ++this->get(); return *this; }
 		 bool operator==(gen& other) { return this->get() == other; }
 		 bool operator==(gen_ref& other) { return this->get() == other.get(); }
  	 	 bool operator!=(gen& other) { return this->get() != other; }
