@@ -3,11 +3,13 @@
 
 #include <iostream>
 #include <vector>
+#include <array>
 #include <algorithm>
 #include <exception>
 #include <functional>
 
 namespace kgen {
+
     /* main generator class */
     template<typename T, int N = 0> // TODO IMPLEMENT LOOKBACK GENERATOR
     class gen {
@@ -17,22 +19,37 @@ namespace kgen {
 
         constexpr explicit gen(eog_tag) : eog{true} {}
 
-        static const gen &get_eog() {
+        static gen &get_eog() {
             static gen terminal{eog_tag{}}; // naming - terminal->eog and eog->eog_ TODO
             return terminal;
         }
 
-        class generable {
-            friend class gen;
+	   struct gen_ref :  std::reference_wrapper<gen> { 
+		 const T& operator*(void) { return *this->get(); }
+		 void operator++(void) { ++this->get(); }
+		 bool operator==(gen& other) { return this->get() == other; }
+		 bool operator==(gen_ref& other) { return this->get() == other.get(); }
+ 	 	 bool operator!=(gen& other) { return this->get() != other; }
+	 	 bool operator!=(gen_ref& other) { return this->get() != other.get(); }
+	   }; 
 
-            gen &g;
-        public:
-            explicit generable(gen &g_) : g{g_} {}
+       class generable {
+           friend class gen;
 
-            gen &begin() { return g; }
+           gen &g;
+       public:
+           explicit generable(gen &g_) : g{g_} {}
 
-            const gen &end() { return get_eog(); }
-        };
+           gen_ref begin() { 
+             return gen_ref{g}; 
+           }
+
+           const gen_ref end() { 
+             return gen_ref {get_eog()} ; // std::reference_wrapper<gen>{ get_eog() }; 
+           }
+       };
+
+
 
         /* abstract base for lookback class */
         class lb_base {
@@ -153,7 +170,9 @@ namespace kgen {
         bool operator==(const gen &rhs) { return eog && rhs.eog; }
 
         bool operator!=(const gen &rhs) { return !eog || !rhs.eog; } // DeMorgan's law, look it up ;^)
+        gen (const gen&) = delete;
 
+        gen& operator=(const gen&) = delete;
     };
 
 }
