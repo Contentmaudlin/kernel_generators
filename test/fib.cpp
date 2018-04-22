@@ -1,18 +1,11 @@
 #include <cassert>
 #include "kgen.hpp"
 
-class fib_gen : public kgen::gen<int> {
-public:
-    fib_gen() : kgen::gen<int>{{x}} {}    // seed state
-private:
+class fib_gen : public kgen::gen<int, 2> {
     int next() override {
-        x = x[-1] + x[-2];
-        return *(*x == 0 ? x = 1 : x);
+        return prev(-2) ? prev(-1) + prev(-2) : 1;
     }
-
-    lookback<int, 2> x; // x will have a lookback history of 2 iterations
 };
-
 
 int main() {
     using namespace std;
@@ -39,5 +32,5 @@ int main() {
 
     cout << "/*** PASSED fib_test ***/" << endl;
 
-    return;
+    return 0;
 }

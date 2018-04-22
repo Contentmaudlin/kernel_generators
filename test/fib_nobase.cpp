@@ -13,7 +13,7 @@ private:
     lookback<int, 2> x{1}; // x will have a lookback history of 2 iterations
 };
 
-int fibnobase_test() {
+int main() {
     using namespace std;
 
     fibnobase_gen g;
