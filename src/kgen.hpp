@@ -13,6 +13,7 @@ namespace kgen {
     /* main generator class */
     template<typename T, int N = 0>
     class gen {
+        static_assert(N >= 0, "N must be positive or zero");
         // subclasses
     private:
         class eog_tag {
@@ -20,9 +21,20 @@ namespace kgen {
 
         class gen_ref : public std::reference_wrapper<gen> {
         public:
+            typedef std::input_iterator_tag iterator_category;
+            typedef T value_type;
+            typedef T &reference;
+            typedef T *pointer;
+            typedef ptrdiff_t difference_type;
+
             const T &operator*() { return *this->get(); }
 
-            gen_ref &operator++(void) {
+            gen_ref &operator++() {
+                ++this->get();
+                return *this;
+            }
+
+            gen_ref &operator++(int) {
                 ++this->get();
                 return *this;
             }
@@ -72,6 +84,7 @@ namespace kgen {
 
         template<typename U, int Max = 1>
         class lookback : public lb_base {
+            static_assert(Max >= 0, "Max must be positive");
         public:
 
             lookback() : lb_base(0) { for (auto &x : buf) x = U{}; }
@@ -121,14 +134,12 @@ namespace kgen {
     public:
         typedef std::input_iterator_tag iterator_category;
         typedef T value_type;
+        typedef T &reference;
+        typedef T *pointer;
+        typedef ptrdiff_t difference_type;
 
         //  member functions
     private:
-        static gen &eog_gen() {
-            static gen terminal{eog_tag{}}; // naming - terminal->eog and eog->eog_ TODO
-            return terminal;
-        }
-
         constexpr explicit gen(eog_tag) : eog{true} {}
 
         void set_next() {
@@ -153,6 +164,10 @@ namespace kgen {
         T prev(int i) { return val[i]; }
 
     public:
+        static gen &eog_gen() {
+            static gen terminal{eog_tag{}}; // naming - terminal->eog and eog->eog_ TODO
+            return terminal;
+        }
 
         const T &operator*() {
             if (!init) {
