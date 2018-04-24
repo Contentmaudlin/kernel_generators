@@ -137,6 +137,11 @@ namespace kgen {
             explicit lb_base(_lb_base *p_) : p{p_} {}
 
             std::shared_ptr<_lb_base> p;
+
+            template<typename U, int Max>
+            std::shared_ptr<_lookback<U, Max>> get() {
+                return static_cast<std::shared_ptr<_lookback<U, Max>>>(p);
+            }
         };
 
         template<typename U, int Max = 1>
@@ -152,13 +157,14 @@ namespace kgen {
              lookback(Args &&... args) : lb_base{new _lookback<U, Max>(std::forward<Args>(args)...)} {}*/
 
             lookback &operator=(const U &val) {
-                static_cast<_lookback<U, Max>>(*lb_base::p).operator=(val);
+                this->get<U, Max>()->operator=(val);
+                //static_cast<std::shared_ptr<_lookback<U, Max>>>(lb_base::p)->operator=(val);
                 return *this;
             }
 
-            const U &operator[](int i) { return static_cast<_lookback<U, Max>>(*lb_base::p).operator[](i); }
+            const U &operator[](int i) { return lb_base::get<U, Max>()->operator[](i); }
 
-            const U &operator*() { return static_cast<_lookback<U, Max>>(*lb_base::p).operator*(); }
+            const U &operator*() { return lb_base::get<U, Max>()->operator*(); }
         };
 
         // typedefs
