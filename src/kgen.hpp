@@ -8,7 +8,7 @@
 
 namespace kgen {
     /* main generator class */
-    template<typename T>
+    template<typename T, unsigned int H = 1>
     class gen {
     private:
         /* gen inner classes */
@@ -17,18 +17,18 @@ namespace kgen {
         class lb_base {
         protected:
             int ctr;
+            bool set = true;
         public:
             explicit lb_base(int i) : ctr{i} {}
 
             void bump() {
                 ++ctr;
+                set = false;
             }
         };
 
         /* gen member variables */
         std::vector<std::reference_wrapper<lb_base>> lbs;
-        bool init = false;
-        T val;
 
     protected:
         /* gen inner classes */
@@ -36,9 +36,12 @@ namespace kgen {
         class lookback : public lb_base {
         public:
 
-            lookback() : lb_base(0), buf(Max, U{}) {}
+            lookback() : lb_base(0), buf(Max + 1, U{}) {}
 
-            explicit lookback(const U &init) : lb_base(0), buf(Max, init) {}
+            explicit lookback(const U &init) : lb_base(0), buf(Max + 1, init) { }
+
+            explicit lookback(const U(& arr)[Max]) : lb_base(0),
+                buf(1, U{}) { std::copy( &arr[0], &arr[Max], std::back_inserter(buf)); }
 
             lookback(lookback &l) : lb_base(l.ctr), buf(l.buf) {}
 
@@ -46,6 +49,7 @@ namespace kgen {
 
             lookback &operator=(const U &val) {
                 buf[lb_base::ctr % Max] = val;
+                lb_base::set = true;
                 return *this;
             }
 
@@ -54,23 +58,39 @@ namespace kgen {
                     throw std::invalid_argument("It's called lookback not lookahead!");
                 if (-i > Max)
                     throw std::invalid_argument(
-                            "Can't lookback more than " + std::to_string(Max) + " (attempted: " + std::to_string(-i) +
-                            ")");
+                            "Can't lookback more than " + std::to_string(Max) + 
+                            " (attempted: " + std::to_string(-i) + ")");
+                if (i == 0 && !lb_base::set)
+                  throw std::runtime_error("Uninitialized variable");
                 return buf[(lb_base::ctr + i + Max) % Max];
             }
 
             U &operator*() {
-                return buf[lb_base::ctr % Max];
+              if (!lb_base::set)
+                throw std::runtime_error("Uninitialized variable");
+              return buf[lb_base::ctr % Max];
             }
 
         private:
             /* lookback member variables */
             std::vector<U> buf;
+
         };
 
         /* gen member functions and variables */
-        gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs)
-                : lbs{_lbs} {}
+
+        gen(std::initializer_list<std::reference_wrapper<lb_base>> _lbs) 
+            : lbs{_lbs}, history{T{}} { }
+
+        gen(T init = T{},
+            std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {})
+            : lbs{_lbs}, history(init) { }
+
+        gen(const T(& arr)[H],
+            std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) 
+            : lbs{_lbs}, history{arr} { }
+
+        T hist(int i) { return this->history[i]; } ;
 
         virtual T next() = 0;
 
@@ -82,28 +102,23 @@ namespace kgen {
         /* TODO do we need these here?
         typedef std::input_iterator_tag iterator_category;
         typedef T value_type; */
-
         /* gen operator overloading */
         const T &operator*() {
-            if (!init) {
-                val = next();
-                init = true;
-            }
-            return val;
+          return *history;
         }
 
         gen &operator++() {
-            if (!init) {
-                val = next();
-                init = true;
-            }
-            for (auto &&l : lbs) l.get().bump();
-            val = next();
+            for (auto &&l : lbs) 
+              l.get().bump();
+            history.bump();
+            history = next();
             return *this;
         }
 
         /* gen member functions */
         bool at_end() const { return end; } // TODO handle at_end() in op*, op++
+    private:
+        lookback<T, H> history;
     };
 
 }

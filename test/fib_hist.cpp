@@ -1,23 +1,20 @@
 #include <cassert>
 #include "kgen.hpp"
 
-class fib_gen : public kgen::gen<int> {
+class fib_hist : public kgen::gen<int, 2> {
 public:
-    fib_gen() : kgen::gen<int>{{x}} {}    // seed state
+    fib_hist() : kgen::gen<int, 2>(1) {}    // seed state
 private:
     int next() override {
-        x = x[-1] + x[-2];
-        return *(*x == 0 ? x = 1 : x);
+      return hist(-1) + hist(-2);
     }
-
-    lookback<int, 2> x;
 };
 
 
-int fib_test() {
+int fib_hist_test() {
     using namespace std;
 
-    fib_gen g;
+    fib_hist g;
 
     cout << *g  << endl;
     cout << *++g  << endl;
@@ -33,7 +30,7 @@ int fib_test() {
     cout << *++g  << endl;
     cout << *++g  << endl;
 
-    cout << "/*** PASSED fib_test ***/" << endl;
+    cout << "/*** PASSED fib_hist ***/" << endl;
 
     return 0;
 }
