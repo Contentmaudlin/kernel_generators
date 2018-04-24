@@ -6,4 +6,4 @@ Kernel generators are locally stateful (i.e. subsequent `yield()` calls produce 
 
 Moreover, this library also allows one to chain `map()` or `filter()` calls to generators to give different behavior to existing generators.
 
-Finally, one can also define a kernel generator with a **lookback**. This will make the kernel generator store a circular buffer of its local state, allowing easy acccess to a previous yield.
+Finally, one can also define a kernel generator with a **lb_core**. This will make the kernel generator store a circular buffer of its local state, allowing easy acccess to a previous yield.

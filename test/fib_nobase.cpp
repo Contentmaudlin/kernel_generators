@@ -10,7 +10,7 @@ private:
         return *x;
     }
 
-    lookback<int, 2> x{1}; // x will have a lookback history of 2 iterations
+    _lookback<int, 2> x{1}; // x will have a lb_core history of 2 iterations
 };
 
 int main() {

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <exception>
 #include <functional>
+#include <memory>
 
 namespace kgen {
 
@@ -62,17 +63,63 @@ namespace kgen {
             }
         };
 
-        class lb_base {
+        class _lb_base {
         protected:
             int ctr;
             bool can_read;
         public:
-            explicit lb_base(int i) : ctr{i}, can_read{false} {}
+            explicit _lb_base(int i) : ctr{i}, can_read{false} {}
 
             void bump() {
                 ++ctr;
                 can_read = false;
             }
+        };
+
+        template<typename U, int Max = 1>
+        class _lookback : public _lb_base {
+            static_assert(Max >= 0, "Max must be positive");
+        public:
+
+            _lookback() : _lb_base(0) { for (auto &x : buf) x = U{}; }
+
+            explicit _lookback(const U &init) : _lb_base(0) { for (auto &x : buf) x = init; }
+
+            explicit _lookback(const U(&arr)[Max]) : _lb_base(0) {
+                for (int i = 1; i <= Max; ++i)
+                    buf[i] = arr[i - 1];
+            }
+
+            _lookback(_lookback &l) : _lb_base(l.ctr), buf(l.buf) {}
+
+            /* lb_core operator overloading */
+
+            _lookback &operator=(const U &val) {
+                buf[_lb_base::ctr % (Max + 1)] = val;
+                _lb_base::can_read = true;
+                return *this;
+            }
+
+            const U &operator[](int i) {
+                if (i > 0)
+                    throw std::invalid_argument("It's called lookback not lookahead!");
+                if (i == 0 && !_lb_base::can_read)
+                    throw std::invalid_argument("Can't read from unassigned value!");
+                if (-i > Max)
+                    throw std::invalid_argument(
+                            "Can't lb_core more than " + std::to_string(Max) +
+                            " (attempted: " + std::to_string(-i) + ")");
+                return buf[(_lb_base::ctr + i + Max + 1) % (Max + 1)];
+            }
+
+            const U &operator*() {
+                if (!_lb_base::can_read) throw std::invalid_argument("Can't read from unassigned value!");
+                return buf[_lb_base::ctr % (Max + 1)];
+            }
+
+        private:
+            /* lb_core member variables */
+            std::array<U, Max + 1> buf;
         };
 
     protected:
@@ -82,55 +129,39 @@ namespace kgen {
             }
         };
 
+        class lb_base {
+        public:
+            void bump() { p->bump(); }
+
+        protected:
+            explicit lb_base(_lb_base *p_) : p{p_} {}
+
+            std::shared_ptr<_lb_base> p;
+        };
+
         template<typename U, int Max = 1>
         class lookback : public lb_base {
-            static_assert(Max >= 0, "Max must be positive");
         public:
+            lookback() : lb_base{new _lookback<U, Max>{}} {}
 
-            lookback() : lb_base(0) { for (auto &x : buf) x = U{}; }
+            explicit lookback(const U &init) : lb_base{new _lookback<U, Max>(init)} {}
 
-            explicit lookback(const U &init) : lb_base(0) { for (auto &x : buf) x = init; }
+            explicit lookback(const U(&arr)[Max]) : lb_base{new _lookback<U, Max>(arr)} {}
 
-            explicit lookback(const U(&arr)[Max]) : lb_base(0) {
-                for (int i = 1; i <= Max; ++i)
-                    buf[i] = arr[i - 1];
-            }
-
-            lookback(lookback &l) : lb_base(l.ctr), buf(l.buf) {}
-
-            /* lookback operator overloading */
+            /* template<class... Args>
+             lookback(Args &&... args) : lb_base{new _lookback<U, Max>(std::forward<Args>(args)...)} {}*/
 
             lookback &operator=(const U &val) {
-                buf[lb_base::ctr % (Max + 1)] = val;
-                lb_base::can_read = true;
+                static_cast<_lookback<U, Max>>(*lb_base::p).operator=(val);
                 return *this;
             }
 
-            const U &operator[](int i) {
-                if (i > 0)
-                    throw std::invalid_argument("It's called lookback not lookahead!");
-                if (i == 0 && !lb_base::can_read)
-                    throw std::invalid_argument("Can't read from unassigned value!");
-                if (-i > Max)
-                    throw std::invalid_argument(
-                            "Can't lookback more than " + std::to_string(Max) +
-                            " (attempted: " + std::to_string(-i) + ")");
-                return buf[(lb_base::ctr + i + Max + 1) % (Max + 1)];
-            }
+            const U &operator[](int i) { return static_cast<_lookback<U, Max>>(*lb_base::p).operator[](i); }
 
-            const U &operator*() {
-                if (!lb_base::can_read) throw std::invalid_argument("Can't read from unassigned value!");
-                return buf[lb_base::ctr % (Max + 1)];
-            }
-
-        private:
-            /* lookback member variables */
-            std::array<U, Max + 1> buf;
+            const U &operator*() { return static_cast<_lookback<U, Max>>(*lb_base::p).operator*(); }
         };
 
         // typedefs
-    private:
-        typedef std::initializer_list<std::reference_wrapper<lb_base>> lb_list;
     public:
         typedef std::input_iterator_tag iterator_category;
         typedef T value_type;
@@ -151,11 +182,11 @@ namespace kgen {
     protected:
         gen() = default;
 
-        gen(lb_list _lbs) : lbs{_lbs} {}
+        gen(std::initializer_list<lb_base> _lbs) : lbs{_lbs} {}
 
-        explicit gen(const T &init, lb_list _lbs = {}) : lbs{_lbs}, val{init} {}
+        explicit gen(const T &init, std::initializer_list<lb_base> _lbs = {}) : lbs{_lbs}, val{init} {}
 
-        explicit gen(const T (&arr)[N], lb_list _lbs = {}) : lbs{_lbs}, val{arr} {}
+        explicit gen(const T (&arr)[N], std::initializer_list<lb_base> _lbs = {}) : lbs{_lbs}, val{arr} {}
 
         virtual T next() {
             throw std::out_of_range("Generator at end, can't read!");
@@ -200,7 +231,7 @@ namespace kgen {
         gen &operator=(const gen &) = delete;
         // member variables
     private:
-        std::vector<std::reference_wrapper<lb_base>> lbs;
+        std::vector<lb_base> lbs;
         bool init = false;
         bool eog = false;
         lookback<T, N> val;
