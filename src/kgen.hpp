@@ -12,8 +12,27 @@
 namespace kgen {
 
     /* main generator class */
+
+  /*
+    template<typename U, int N = 0>
+    class gen {
+
+      gen(std::initializer_list<std::reference_wrapper<lb_base>>_lbs) : p{new gen{_lbs}} { }
+
+      explicit gen(const T &init, std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) : 
+        p{new gen{init, _lbs}} { }
+
+      explicit gen(const T (&arr)[N], std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) : 
+        p{new gen{arr, _lbs}} { }
+
+      shared_ptr<gen> p;
+
+    }
+    */
+
     template<typename T, int N = 0>
     class gen {
+
         static_assert(N >= 0, "N must be positive or zero");
         // subclasses
     private:
@@ -59,7 +78,7 @@ namespace kgen {
             }
 
             const gen_ref end() {
-                return gen_ref {eog_gen()};
+                return gen_ref {eoggen()};
             }
         };
 
@@ -134,38 +153,54 @@ namespace kgen {
             void bump() { p->bump(); }
 
         protected:
-            explicit lb_base(_lb_base *p_) : p{p_} {}
+            explicit lb_base(std::shared_ptr<_lb_base> p_) : p{p_} {}
 
             std::shared_ptr<_lb_base> p;
 
             template<typename U, int Max>
             std::shared_ptr<_lookback<U, Max>> get() {
-                return static_cast<std::shared_ptr<_lookback<U, Max>>>(p);
+                return std::static_pointer_cast<_lookback<U, Max>>(p);
             }
         };
 
         template<typename U, int Max = 1>
         class lookback : public lb_base {
         public:
-            lookback() : lb_base{new _lookback<U, Max>{}} {}
+            lookback() : lb_base{std::make_shared<_lookback<U, Max>>() } {}
 
-            explicit lookback(const U &init) : lb_base{new _lookback<U, Max>(init)} {}
+            explicit lookback(const U &init) : lb_base{std::make_shared<_lookback<U, Max>>(init)} {}
 
-            explicit lookback(const U(&arr)[Max]) : lb_base{new _lookback<U, Max>(arr)} {}
+            explicit lookback(const U(&arr)[Max]) : lb_base{std::make_shared<_lookback<U, Max>>(arr)} {}
 
             /* template<class... Args>
              lookback(Args &&... args) : lb_base{new _lookback<U, Max>(std::forward<Args>(args)...)} {}*/
 
             lookback &operator=(const U &val) {
-                this->get<U, Max>()->operator=(val);
-                //static_cast<std::shared_ptr<_lookback<U, Max>>>(lb_base::p)->operator=(val);
+                this->template get<U, Max>()->operator=(val);
+                //static_pointer_cast<std::shared_ptr<_lookback<U, Max>>>(lb_base::p)->operator=(val);
                 return *this;
             }
 
-            const U &operator[](int i) { return lb_base::get<U, Max>()->operator[](i); }
+            const U &operator[](int i) { return lb_base::template get<U, Max>()->operator[](i); }
 
-            const U &operator*() { return lb_base::get<U, Max>()->operator*(); }
+            const U &operator*() { return lb_base::template get<U, Max>()->operator*(); }
         };
+
+      class gen_core {
+        public:
+        std::vector<std::reference_wrapper<lb_base>> lbs;
+        bool init = false;
+        bool eog = false;
+        lookback<T, N> val;
+        gen_core() : lbs{}, val{} { } 
+        gen_core(bool _eog) : lbs{}, eog{_eog}, val{} { } 
+        gen_core(const T& _init, std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {})
+          : lbs{_lbs}, init{_init},val{} {} 
+        gen_core(const T (&arr)[N], std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {})
+          : lbs{_lbs}, val{arr} { }
+        gen_core(std::initializer_list<std::reference_wrapper<lb_base>> _lbs)
+          : lbs{_lbs}, val{ } { } 
+      };
 
         // typedefs
     public:
@@ -177,70 +212,79 @@ namespace kgen {
 
         //  member functions
     private:
-        constexpr explicit gen(eog_tag) : eog{true} {}
+        constexpr explicit gen(eog_tag) : state{std::make_shared<gen_core>(true)} {}
 
         void set_next() {
             try {
-                val = next();
-            } catch (reached_eog &e) { eog = true; }
+                state->val = next();
+            } catch (reached_eog &e) { state->eog  = true; }
         }
 
     protected:
-        gen() = default;
+        gen() : state{std::make_shared<gen_core>()} { }
 
-        gen(std::initializer_list<lb_base> _lbs) : lbs{_lbs} {}
+        gen(std::initializer_list<std::reference_wrapper<lb_base>>_lbs) : 
+          state{std::make_shared<gen_core>(_lbs)}  { 
+            state->lbs = _lbs;
+            state->val = lookback<T, N>{}; 
+          }
 
-        explicit gen(const T &init, std::initializer_list<lb_base> _lbs = {}) : lbs{_lbs}, val{init} {}
+        explicit gen(const T &init, std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) 
+          : state{init, _lbs} { }
 
-        explicit gen(const T (&arr)[N], std::initializer_list<lb_base> _lbs = {}) : lbs{_lbs}, val{arr} {}
+        explicit gen(const T (&arr)[N], std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) : 
+          state{_lbs, arr} { }
 
         virtual T next() {
             throw std::out_of_range("Generator at end, can't read!");
         }
 
-        T prev(int i) { return val[i]; }
+        T prev(int i) { return state->val[i]; }
 
     public:
-        static gen &eog_gen() {
+        static gen &eoggen() {
             static gen terminal{eog_tag{}}; // naming - terminal->eog and eog->eog_ TODO
             return terminal;
         }
 
         const T &operator*() {
-            if (!init) {
+            if (!state->init) {
                 set_next();
-                init = true;
+                state->init = true;
             }
-            return *val;
+            return *state->val;
         }
 
         gen &operator++() {
-            if (!init) {
+            if (!state->init) {
                 set_next();
-                init = true;
+                state->init = true;
             }
-            for (auto &&l : lbs) l.get().bump();
-            val.bump();
+            for (auto &&l : state->lbs) l.get().bump();
+            state->val.bump();
             set_next();
             return *this;
         }
 
-        bool at_eog() { return eog; }
+        bool at_eog() { return state->eog; }
 
         generable forall() { return generable{*this}; }
 
-        bool operator==(const gen &rhs) { return eog && rhs.eog; }
+        bool operator==(const gen &rhs) { return state->eog && rhs.state->eog; }
 
-        bool operator!=(const gen &rhs) { return !eog || !rhs.eog; } // DeMorgan's law, look it up ;^)
+        bool operator!=(const gen &rhs) { return !state->eog || !rhs.state->eog; } // DeMorgan's law, look it up ;^)
         gen(const gen &) = delete;
 
         gen &operator=(const gen &) = delete;
         // member variables
     private:
-        std::vector<lb_base> lbs;
+        std::shared_ptr<gen_core> state;
+        /*
+        std::vector<std::reference_wrapper<lb_base>> lbs;
         bool init = false;
         bool eog = false;
         lookback<T, N> val;
+        */
     };
 
 }
