@@ -13,6 +13,19 @@ int main() {
     fib_gen g;
 
     /*
+    cout << *g << endl;
+    cout << *++g << endl;
+    cout << *++g << endl;
+    cout << *++g << endl;
+    cout << *++g << endl;
+    cout << *++g << endl;
+    cout << *++g << endl;
+    cout << *++g << endl;
+    */
+    fib_gen k = g.forall().begin();
+    cout << *k << endl;
+
+    /*
     assert(*g == 1);
     assert(*++g == 1);
     assert(*++g == 2);
@@ -28,7 +41,9 @@ int main() {
     assert(*++g == 233);
     */
 
-    for (auto& x : g.forall()) cout << x << endl;
+    //for (auto& x : g.forall()) cout << x << endl;
+    // g.forall()
+//    g.forall().map<string>([](int a) -> std::string { return std::to_string(a); });
 
     cout << "/*** PASSED fib_test ***/" << endl;
 

@@ -33,13 +33,13 @@ namespace kgen {
 
     template<typename T, int N = 0>
     struct abstract_gen {
-      virtual T next(); 
-      virtual T prev(int);
-      virtual const T operator*();
-      virtual abstract_gen &operator++();
-      virtual bool at_eog() const;
-      virtual bool operator==(const abstract_gen &rhs) const;
-      virtual bool operator!=(const abstract_gen &rhs) const;
+      virtual T next() = 0; 
+      virtual T prev(int) = 0;
+      virtual const T operator*() = 0;
+      virtual abstract_gen &operator++() = 0;
+      virtual bool at_eog() const = 0;
+      virtual bool operator==(const abstract_gen &rhs) const = 0;
+      virtual bool operator!=(const abstract_gen &rhs) const = 0;
       static abstract_gen<T, N> &eoggen() {
             static abstract_gen<T, N> terminal{eog_tag{}};
             return terminal;
@@ -116,21 +116,24 @@ namespace kgen {
     };
 
     template<typename T, int N>
+    class gen;
+
+    template<typename T, int N>
     class generable {
         std::shared_ptr<abstract_gen<T, N>> g;
     public:
-        explicit generable<T, N>(abstract_gen<T, N> &g_) : 
-          g{std::make_shared<abstract_gen<T, N>>(g_)} { }
+        explicit generable<T, N>(gen<T, N> &g_) : 
+          g{std::make_shared<gen<T, N>>(g_)} { }
 
         template <typename K>
         explicit generable<K, N>(map_gen<T, K, N> &&g_) 
         : g{std::make_shared<abstract_gen<T, N>>(g_)} { }
 
         gen_ref<T, N> begin() {
-            return gen_ref{g};
+            return *g;
         }
 
-        const gen_ref<T, N> end() {
+        const gen_ref<T, N> &end() {
             static abstract_gen<T, N> terminal{eog_tag{}};
             return terminal;
         }
@@ -143,7 +146,6 @@ namespace kgen {
 
     template<typename T, int N = 0>
     class gen : public abstract_gen<T, N> {
-
         static_assert(N >= 0, "N must be positive or zero");
         // subclasses
     private:
@@ -298,8 +300,8 @@ namespace kgen {
         explicit gen(const T &init, std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) 
           : state{init, _lbs} { }
 
-        explicit gen(const T (&arr)[N], std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) : 
-          state{_lbs, arr} { }
+        explicit gen(const T (&arr)[N], std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) 
+          : state{_lbs, arr} { }
 
         T next() override {
             throw std::out_of_range("Generator at end, can't read!");
@@ -344,9 +346,10 @@ namespace kgen {
         bool operator!=(const abstract_gen<T, N> &rhs) const override { 
           return !this->at_eog() || !rhs.at_eog();
         }
-        gen(const gen &) = delete;
+      //  gen(const gen &) = delete;
 
         gen &operator=(const gen &) = delete;
+
         // member variables
     private:
         std::shared_ptr<gen_core> state;
