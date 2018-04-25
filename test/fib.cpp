@@ -22,9 +22,16 @@ int main() {
     cout << *++g << endl;
     cout << *++g << endl;
     */
-    fib_gen k = g.forall().begin();
-    cout << *k << endl;
+    cout << *g << endl;
+    g.forall().map<string>([](int a) -> std::string { 
+        return string ("hi: ") + std::to_string(a); });
 
+    /*
+    for(auto &x : g.forall().map<string>([](int a) -> std::string 
+          { return string("hi: ") + std::to_string(a) ; })) {
+                                                              cout << x << endl;
+                                                            }
+                                                            */
     /*
     assert(*g == 1);
     assert(*++g == 1);
