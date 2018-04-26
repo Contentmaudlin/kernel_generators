@@ -134,10 +134,10 @@ struct until_gen : abstract_gen<T, N> {
             return gr;
         }
 
-        template<typename K>
-        typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
-            map_gen<K, T, N> m{g, map_fun};
-            return typename map_gen<K, T, N>::map_generable(m);
+        template<typename F>
+        typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable map(F map_fun) {
+            map_gen<std::result_of_t<F(T)>, T, N> m{g, map_fun};
+            return typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable(m);
         }
 
         typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
@@ -203,10 +203,10 @@ struct until_n_gen : abstract_gen<T, N> {
             return gr;
         }
 
-        template<typename K>
-        typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
-            map_gen<K, T, N> m{g, map_fun};
-            return typename map_gen<K, T, N>::map_generable(m);
+        template<typename F>
+        typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable map(F map_fun) {
+            map_gen<std::result_of_t<F(T)>, T, N> m{g, map_fun};
+            return typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable(m);
         }
 
         typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
@@ -266,10 +266,10 @@ public:
             return gr;
         }
 
-        template<typename Z>
-        typename map_gen<Z, T, N>::map_generable map(std::function<Z(T)> map_fun) {
-            map_gen<Z, T, N> m{g, map_fun};
-            return typename map_gen<Z, T, N>::map_generable(m);
+        template<typename F>
+        typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable map(F map_fun) {
+            map_gen<std::result_of_t<F(T)>, T, N> m{g, map_fun};
+            return typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable(m);
         }
 
         typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
@@ -289,13 +289,15 @@ struct filter_gen : public abstract_gen<T, N> {
         : g(g_), filter_fun{_filter_fun} { }
 
     const T operator*() override {
-        while (!filter_fun(*g)) ++g;
+        try { while (!filter_fun(*g)) ++g; }
+        catch (std::out_of_range &e) {}
         return *g;
     }
 
     filter_gen<T, N> &operator++() override {
         ++g;
-        while (!filter_fun(*g)) ++g;
+        try { while (!filter_fun(*g)) ++g; }
+        catch (std::out_of_range &e) {}
         return *this;
     }
 
@@ -326,7 +328,8 @@ public:
         }
 
         const gen_ref<T, N> &end() {
-            return gen_ref<T, N>{kgen::eoggen<T, N>()};
+            static gen_ref<T, N> gr{kgen::eoggen<T, N>()};
+            return gr;
         }
 
         template<typename F>
@@ -360,10 +363,10 @@ private:
             return gr;
         }
 
-        template<typename K>
-        typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
-            map_gen<K, T, N> m{g, map_fun};
-            return typename map_gen<K, T, N>::map_generable(m);
+        template<typename F>
+        typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable map(F map_fun) {
+            map_gen<std::result_of_t<F(T)>, T, N> m{g, map_fun};
+            return typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable(m);
         }
 
         typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
