@@ -20,12 +20,12 @@ namespace kgen {
 
 	using std::result_of_t;
 	using std::function;
-	
+
 	using std::initializer_list;
 	using std::reference_wrapper;
-	
+
 	using std::to_string;
-	
+
 	using std::exception;
 	using std::out_of_range;
 	using std::invalid_argument;
@@ -514,7 +514,7 @@ namespace kgen {
             bool eog = false;
             lookback<T, N> val;
 
-            gen_core() : lbs{}, val{} {}
+            gen_core() = default;
 
             gen_core(bool _eog) : lbs{}, eog{_eog}, val{} {}
 
@@ -525,7 +525,7 @@ namespace kgen {
                     : lbs{_lbs}, val{arr} {}
 
             gen_core(initializer_list<lb_ref> _lbs)
-                    : lbs{_lbs}, val{} {}
+                    : lbs{_lbs} {}
         };
 
     public: // typedefs
@@ -546,16 +546,13 @@ namespace kgen {
     protected:
 
         gen(initializer_list<lb_ref> _lbs)
-            : state{make_shared<gen_core>(_lbs)} {
-            state->lbs = _lbs;
-            state->val = lookback<T, N>{};
-        }
+                : state{make_shared<gen_core>(_lbs)} {}
 
         explicit gen(const T &init, initializer_list<lb_ref> _lbs = {})
-                : state{init, _lbs} {}
+                : state{make_shared<gen_core>(init, _lbs)} {}
 
         explicit gen(const T (&arr)[N], initializer_list<lb_ref> _lbs = {})
-                : state{_lbs, arr} {}
+                : state{make_shared<gen_core>(arr, _lbs)} {}
 
         virtual T next() { throw out_of_range("Generator at end"); }
 
