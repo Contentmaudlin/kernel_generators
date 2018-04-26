@@ -140,7 +140,8 @@ public:
         }
 
         const gen_ref<T, N> &end() {
-            return gen_ref<T, N>{kgen::eoggen<T, N>()};
+            static gen_ref<T, N> gr{kgen::eoggen<T, N>()};
+            return gr;
         }
 
         template<typename Z>
@@ -238,9 +239,10 @@ private:
             return gen_ref<T, N>{g};
         }
 
-          const gen_ref<T, N> &end() {
-            return gen_ref<T, N>{kgen::eoggen<T, N>()};
-          }
+        const gen_ref<T, N> &end() {
+            static gen_ref<T, N> gr{kgen::eoggen<T, N>()};
+            return gr;
+        }
 
         template<typename K>
         typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
