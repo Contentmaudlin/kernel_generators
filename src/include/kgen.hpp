@@ -116,20 +116,15 @@ struct until_gen : abstract_gen<T, N> {
     }
 
     until_gen<T, N> &operator++() override {
-        if (stop)
-            throw out_of_range("until_gen out of range!");
+        if (stop) throw out_of_range("until_gen out of range!");
         ++g;
         if (ufun(*g)) stop = true;
         return *this;
     }
 
-    until_gen<T, N> &eoggen() {
-        return kgen::eoggen<T, N>();
-    }
+    until_gen<T, N> &eoggen() { return kgen::eoggen<T, N>(); }
 
-    bool at_eog() const override {
-        return g.at_eog() || this->stop;
-    }
+    bool at_eog() const override { return g.at_eog() || this->stop; }
 
     bool operator==(const abstract_gen<T, N> &rhs) const override {
         return (g.at_eog() || this->stop) && rhs.at_eog();
@@ -142,7 +137,7 @@ struct until_gen : abstract_gen<T, N> {
     class until_generable {
     until_gen<T, N> g;
     public:
-        explicit until_generable(until_gen<T, N> g_) : g{g_} { } 
+        explicit until_generable(until_gen<T, N> g_) : g{g_} {} 
 
         gen_ref<T, N> begin() {
             if (g.ufun(*g)) g.stop = true;
@@ -178,30 +173,23 @@ struct until_n_gen : abstract_gen<T, N> {
     bool stop = false;
 
     until_n_gen(abstract_gen<T, N> &g_, int _count_until)
-        : g(g_), count_until{_count_until} { }
+        : g(g_), count_until{_count_until} {}
 
     const T operator*() override {
-        if (counter >= count_until)
-            throw out_of_range("End of until_n");
+        if (counter >= count_until) throw out_of_range("End of until_n");
         return *g;
     }
 
     until_n_gen<T, N> &operator++() override {
-        if (counter >= count_until)
-            throw out_of_range("End of until_n");
-        if (++counter == count_until)
-            stop = true;
+        if (counter >= count_until) throw out_of_range("End of until_n");
+        if (++counter == count_until) stop = true;
         ++g;
         return *this;
     }
 
-    until_n_gen<T, N> &eoggen() {
-        return kgen::eoggen<T, N>();
-    }
+    until_n_gen<T, N> &eoggen() { return kgen::eoggen<T, N>(); }
 
-    bool at_eog() const override {
-        return g.at_eog() || this->stop;
-    }
+    bool at_eog() const override { return g.at_eog() || this->stop; }
 
     bool operator==(const abstract_gen<T, N> &rhs) const override {
         return (g.at_eog() || this->stop) && rhs.at_eog();
@@ -214,11 +202,9 @@ struct until_n_gen : abstract_gen<T, N> {
     class until_n_generable {
     until_n_gen<T, N> g;
     public:
-        explicit until_n_generable(until_n_gen<T, N> g_) : g{g_} { } 
+        explicit until_n_generable(until_n_gen<T, N> g_) : g{g_} {}
 
-        gen_ref<T, N> begin() {
-            return gen_ref<T, N>{g};
-        }
+        gen_ref<T, N> begin() { return gen_ref<T, N>{g}; }
 
         const gen_ref<T, N> &end() {
             static gen_ref<T, N> gr{kgen::eoggen<T, N>()};
@@ -226,12 +212,14 @@ struct until_n_gen : abstract_gen<T, N> {
         }
 
         template<typename F>
-        typename map_gen<result_of_t<F(T)>, T, N>::map_generable map(F map_fun) {
+        typename map_gen<result_of_t<F(T)>, T, N>::map_generable
+        map(F map_fun) {
             map_gen<result_of_t<F(T)>, T, N> m{g, map_fun};
             return typename map_gen<result_of_t<F(T)>, T, N>::map_generable(m);
         }
 
-        typename filter_gen<T, N>::filter_generable filter(function<bool(T)> filter_fun) {
+        typename filter_gen<T, N>::filter_generable
+        filter(function<bool(T)> filter_fun) {
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
         }
@@ -245,7 +233,7 @@ struct map_gen : abstract_gen<T, N> {
     function<T(K)> map_fun;
 
     map_gen(abstract_gen<K, N> &g_, function<T(K)> _map_fun)
-        : g(g_), map_fun{_map_fun} { }
+        : g(g_), map_fun{_map_fun} {}
 
     const T operator*() override {
         K k = *g;
@@ -257,13 +245,9 @@ struct map_gen : abstract_gen<T, N> {
         return *this;
     }
 
-    abstract_gen<T, N> &eoggen() {
-        return kgen::eoggen<T, N>();
-    }
+    abstract_gen<T, N> &eoggen() { return kgen::eoggen<T, N>(); }
 
-    bool at_eog() const override {
-        return g.at_eog();
-    }
+    bool at_eog() const override { return g.at_eog(); }
 
     bool operator==(const abstract_gen<T, N> &rhs) const override {
         return g.at_eog() && rhs.at_eog();
@@ -275,13 +259,11 @@ struct map_gen : abstract_gen<T, N> {
 
 public:
     class map_generable {
-    map_gen<T, K, N> g;
+        map_gen<T, K, N> g;
     public:
-        explicit map_generable(map_gen<T, K, N> g_) : g{g_} { } 
+        explicit map_generable(map_gen<T, K, N> g_) : g{g_} {} 
 
-        gen_ref<T, N> begin() {
-            return gen_ref<T, N>{g};
-        }
+        gen_ref<T, N> begin() { return gen_ref<T, N>{g}; }
 
         const gen_ref<T, N> &end() {
             static gen_ref<T, N> gr{kgen::eoggen<T, N>()};
@@ -289,12 +271,14 @@ public:
         }
 
         template<typename F>
-        typename map_gen<result_of_t<F(T)>, T, N>::map_generable map(F map_fun) {
+        typename map_gen<result_of_t<F(T)>, T, N>::map_generable
+        map(F map_fun) {
             map_gen<result_of_t<F(T)>, T, N> m{g, map_fun};
             return typename map_gen<result_of_t<F(T)>, T, N>::map_generable(m);
         }
 
-        typename filter_gen<T, N>::filter_generable filter(function<bool(T)> filter_fun) {
+        typename filter_gen<T, N>::filter_generable
+        filter(function<bool(T)> filter_fun) {
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
         }
@@ -308,7 +292,7 @@ struct filter_gen : public abstract_gen<T, N> {
     function<bool(T)> filter_fun;
 
     filter_gen(abstract_gen<T, N> &g_, function<bool(T)> _filter_fun)
-        : g(g_), filter_fun{_filter_fun} { }
+        : g(g_), filter_fun{_filter_fun} {}
 
     const T operator*() override {
         try { while (!filter_fun(*g)) ++g; }
@@ -323,13 +307,9 @@ struct filter_gen : public abstract_gen<T, N> {
         return *this;
     }
 
-    abstract_gen<T, N> &eoggen() {
-        return kgen::eoggen<T, N>();
-    }
+    abstract_gen<T, N> &eoggen() { return kgen::eoggen<T, N>(); }
 
-    bool at_eog() const override {
-        return g.at_eog();
-    }
+    bool at_eog() const override { return g.at_eog(); }
 
     bool operator==(const abstract_gen<T, N> &rhs) const override {
         return g.at_eog() && rhs.at_eog();
@@ -343,11 +323,9 @@ public:
     struct filter_generable {
         filter_gen<T, N> g;
     public:
-        explicit filter_generable(filter_gen<T, N> g_) : g{g_} { } 
+        explicit filter_generable(filter_gen<T, N> g_) : g{g_} {} 
 
-        gen_ref<T, N> begin() {
-            return gen_ref<T, N>{g};
-        }
+        gen_ref<T, N> begin() { return gen_ref<T, N>{g}; }
 
         const gen_ref<T, N> &end() {
             static gen_ref<T, N> gr{kgen::eoggen<T, N>()};
@@ -374,11 +352,9 @@ private:
     class generable {
         abstract_gen<T, N> &g;
     public:
-        explicit generable(abstract_gen<T, N> &g_) : g{g_} { } 
+        explicit generable(abstract_gen<T, N> &g_) : g{g_} {} 
 
-        gen_ref<T, N> begin() {
-            return gen_ref<T, N>{g};
-        }
+        gen_ref<T, N> begin() { return gen_ref<T, N>{g}; }
 
         const gen_ref<T, N> &end() {
             static gen_ref<T, N> gr{kgen::eoggen<T, N>()};
@@ -386,12 +362,14 @@ private:
         }
 
         template<typename F>
-        typename map_gen<result_of_t<F(T)>, T, N>::map_generable map(F map_fun) {
+        typename map_gen<result_of_t<F(T)>, T, N>::map_generable
+        map(F map_fun) {
             map_gen<result_of_t<F(T)>, T, N> m{g, map_fun};
             return typename map_gen<result_of_t<F(T)>, T, N>::map_generable(m);
         }
 
-        typename filter_gen<T, N>::filter_generable filter(function<bool(T)> filter_fun) {
+        typename filter_gen<T, N>::filter_generable
+        filter(function<bool(T)> filter_fun) {
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
         }
@@ -464,9 +442,7 @@ private:
 
 protected:
     class reached_eog : public exception {
-        const char *what() const throw() override {
-                return "lol sry";
-        }
+        const char *what() const throw() override { return "lol sry"; }
     };
 
     class lb_base {
@@ -487,11 +463,13 @@ protected:
     template<typename U, int Max = 1>
     class lookback : public lb_base {
     public:
-        lookback() : lb_base{make_shared<_lookback<U, Max>>() } {}
+        lookback() : lb_base{make_shared<_lookback<U, Max>>()} {}
 
-        explicit lookback(const U &init) : lb_base{make_shared<_lookback<U, Max>>(init)} {}
+        explicit lookback(const U &init)
+            : lb_base{make_shared<_lookback<U, Max>>(init)} {}
 
-        explicit lookback(const U(&arr)[Max]) : lb_base{make_shared<_lookback<U, Max>>(arr)} {}
+        explicit lookback(const U(&arr)[Max])
+            : lb_base{make_shared<_lookback<U, Max>>(arr)} {}
 
         lookback &operator=(const U &val) {
             this->template get<U, Max>()->operator=(val);
@@ -503,25 +481,31 @@ protected:
             return lb_base::template get<U, Max>()->template prev<I>();
         }
 
-        const U &operator[](int i) { return lb_base::template get<U, Max>()->operator[](i); }
+        const U &operator[](int i) {
+            return lb_base::template get<U, Max>()->operator[](i);
+        }
 
-        const U operator*() { return lb_base::template get<U, Max>()->operator*(); }
+        const U operator*() {
+            return lb_base::template get<U, Max>()->operator*();
+        }
     };
+
+    typedef reference_wrapper<lb_base> lb_ref;
 
     class gen_core {
     public:
-        vector<reference_wrapper<lb_base>> lbs;
+        vector<lb_ref> lbs;
         bool init = false;
         bool eog = false;
         lookback<T, N> val;
-        gen_core() : lbs{}, val{} { } 
-        gen_core(bool _eog) : lbs{}, eog{_eog}, val{} { } 
-        gen_core(const T& _init, initializer_list<reference_wrapper<lb_base>> _lbs = {})
-          : lbs{_lbs}, init{_init},val{} {} 
-        gen_core(const T (&arr)[N], initializer_list<reference_wrapper<lb_base>> _lbs = {})
-          : lbs{_lbs}, val{arr} { }
-        gen_core(initializer_list<reference_wrapper<lb_base>> _lbs)
-          : lbs{_lbs}, val{ } { } 
+        gen_core() : lbs{}, val{} {}
+        gen_core(bool _eog) : lbs{}, eog{_eog}, val{} {} 
+        gen_core(const T& _init, initializer_list<lb_ref> _lbs = {})
+            : lbs{_lbs}, init{_init},val{} {} 
+        gen_core(const T (&arr)[N], initializer_list<lb_ref> _lbs = {})
+            : lbs{_lbs}, val{arr} {}
+        gen_core(initializer_list<lb_ref> _lbs)
+            : lbs{_lbs}, val{} {} 
       };
 
 public: // typedefs
@@ -541,19 +525,17 @@ private: // member functions
 
 protected:
 
-    gen(initializer_list<reference_wrapper<lb_base>>_lbs) : 
+    gen(initializer_list<lb_ref>_lbs) : 
         state{make_shared<gen_core>(_lbs)}  { 
             state->lbs = _lbs;
             state->val = lookback<T, N>{}; 
         }
 
-    explicit gen(const T &init,
-            initializer_list<reference_wrapper<lb_base>> _lbs = {}) 
-            : state{init, _lbs} { }
+    explicit gen(const T &init, initializer_list<lb_ref> _lbs = {}) 
+            : state{init, _lbs} {}
 
-    explicit gen(const T (&arr)[N],
-            initializer_list<reference_wrapper<lb_base>> _lbs = {}) 
-            : state{_lbs, arr} { }
+    explicit gen(const T (&arr)[N], initializer_list<lb_ref> _lbs = {}) 
+            : state{_lbs, arr} {}
 
     virtual T next() {
         throw out_of_range("Generator at end, can't read!");
@@ -565,11 +547,12 @@ protected:
     const T &prev() { return state->val.template prev<I>(); }
 
 public:
-    gen() : state{make_shared<gen_core>()} { }
+    gen() : state{make_shared<gen_core>()} {}
 
     gen &eoggen() {
         return kgen::eoggen<T, N>();
     }
+
     const T operator*() override {
         if (state->eog)
             throw out_of_range("Generator has reached an end!");
@@ -608,7 +591,7 @@ public:
     }
 
     bool operator==(const abstract_gen<T, N> &rhs) const override { 
-      return this->at_eog() && rhs.at_eog();
+        return this->at_eog() && rhs.at_eog();
     }
      
     // DeMorgan's law, look it up ;^)
