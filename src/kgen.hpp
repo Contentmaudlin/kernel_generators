@@ -87,7 +87,7 @@ struct until_gen : abstract_gen<T, N> {
 
     const T operator*() override {
         T t = *g;
-        if (ufun(t)) { std::cout << "should stop!" << std::endl; stop = true; } 
+        if (ufun(t)) stop = true;
         return t;
     }
 
@@ -123,7 +123,8 @@ struct until_gen : abstract_gen<T, N> {
         }
 
         const gen_ref<T, N> &end() {
-            return gen_ref<T, N>{kgen::eoggen<T, N>()};
+            static gen_ref<T, N> gr{kgen::eoggen<T, N>()};
+            return gr;
         }
 
         template<typename K>
@@ -205,7 +206,7 @@ public:
             return typename filter_gen<T, N>::filter_generable(f);
         }
 
-        typename until_gen<T, N>::until_gennerable unntil(std::function<bool(T)> until_fun) {
+        typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
             until_gen<T, N> u{g, until_fun};
             return typename until_gen<T, N>::until_generable(u);
         }
