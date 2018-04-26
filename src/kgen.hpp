@@ -33,6 +33,7 @@ namespace kgen {
 class eog_tag {};
 
 template<typename T, int N> class gen;
+template<typename T, int N> struct filter_gen;
 
 template<typename T, int N = 0>
 struct abstract_gen {
@@ -147,6 +148,11 @@ public:
             map_gen<Z, K, X> m{g, map_fun};
             return typename map_gen<Z, K, X>::map_generable(m);
         }
+
+        typename filter_gen<K, X>::filter_generable filter(std::function<bool(K)> filter_fun) {
+            filter_gen<K, X> f{g, filter_fun};
+            return typename filter_gen<K, X>::filter_generable(f);
+        }
     };
 };
 
@@ -204,6 +210,11 @@ public:
         typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
             map_gen<K, T, N> m{g, map_fun};
             return typename map_gen<K, T, N>::map_generable(m);
+        }
+
+        typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
+            filter_gen<T, N> f{g, filter_fun};
+            return typename filter_gen<T, N>::filter_generable(f);
         }
     };
 };
