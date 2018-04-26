@@ -15,6 +15,8 @@ class eog_tag {};
 template<typename T, int N> class gen;
 template<typename T, typename K, int N> struct map_gen;
 template<typename T, int N> struct filter_gen;
+template<typename T, int N> struct until_gen;
+template<typename T, int N> struct until_n_gen;
 
 template<typename T, int N = 0>
 struct abstract_gen {
@@ -147,6 +149,12 @@ struct until_gen : abstract_gen<T, N> {
             until_gen<T, N> u{g, until_fun};
             return typename until_gen<T, N>::until_generable(u);
         }
+
+        typename until_n_gen<T, N>::until_n_generable until_n(int until)
+        {
+            until_n_gen<T, N> u{g, until};
+            return typename until_n_gen<T, N>::until_n_generable{u};
+        }
     };
 };
 
@@ -221,6 +229,12 @@ struct until_n_gen : abstract_gen<T, N> {
             until_gen<T, N> u{g, until_fun};
             return typename until_gen<T, N>::until_generable(u);
         }
+
+        typename until_n_gen<T, N>::until_n_generable until_n(int until)
+        {
+            until_n_gen<T, N> u{g, until};
+            return typename until_n_gen<T, N>::until_n_generable{u};
+        }
     };
 };
 
@@ -289,6 +303,12 @@ public:
             until_gen<T, N> u{g, until_fun};
             return typename until_gen<T, N>::until_generable(u);
         }
+
+        typename until_n_gen<T, N>::until_n_generable until_n(int until)
+        {
+            until_n_gen<T, N> u{g, until};
+            return typename until_n_gen<T, N>::until_n_generable{u};
+        }
     };
 };
 
@@ -356,6 +376,12 @@ public:
         typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
             until_gen<T, N> u{g, until_fun};
             return typename until_gen<T, N>::until_generable(u);
+        }
+
+        typename until_n_gen<T, N>::until_n_generable until_n(int until)
+        {
+            until_n_gen<T, N> u{g, until};
+            return typename until_n_gen<T, N>::until_n_generable{u};
         }
     };
 };
