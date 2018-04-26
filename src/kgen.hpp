@@ -160,6 +160,12 @@ public:
             return gen_ref<K, X>{kgen::eoggen<K, X>()};
         }
 
+        template<typename Z>
+        typename map_gen<Z, K, X>::map_generable map(std::function<Z(K)> map_fun) {
+            map_gen<Z, K, X> m{g, map_fun};
+            return typename map_gen<Z, K, X>::map_generable(m);
+        }
+
           /*
           template<typename K>
           generable map(std::function<K(T)> map_fun) {
