@@ -533,6 +533,8 @@ public:
         return kgen::eoggen<T, N>();
     }
     const T operator*() override {
+        if (state->eog)
+            throw std::out_of_range("Generator has reached an end!");
         if (!state->init) {
             set_next();
             state->init = true;
@@ -541,6 +543,8 @@ public:
     }
 
     gen &operator++() override {
+        if (state->eog)
+            throw std::out_of_range("Generator has reached an end!");
         if (!state->init) {
             set_next();
             state->init = true;
