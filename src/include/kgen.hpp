@@ -44,7 +44,9 @@ namespace kgen {
     public:
         constexpr explicit terminal_gen() : eog{true} {}
 
-        const T &operator*() override { return T{}; }
+        const T &operator*() override {
+            throw std::invalid_argument("operator* invalid for terminal_gen");
+        }
 
         terminal_gen &operator++() override { return *this; }
 
