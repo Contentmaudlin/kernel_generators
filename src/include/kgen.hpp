@@ -329,10 +329,10 @@ public:
             return gen_ref<T, N>{kgen::eoggen<T, N>()};
         }
 
-        template<typename K>
-        typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
-            map_gen<K, T, N> m{g, map_fun};
-            return typename map_gen<K, T, N>::map_generable(m);
+        template<typename F>
+        typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable map(F map_fun) {
+            map_gen<std::result_of_t<F(T)>, T, N> m{g, map_fun};
+            return typename map_gen<std::result_of_t<F(T)>, T, N>::map_generable(m);
         }
 
         typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
