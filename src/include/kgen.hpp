@@ -519,7 +519,7 @@ namespace kgen {
             gen_core(bool _eog) : lbs{}, eog{_eog}, val{} {}
 
             gen_core(const T &_init, initializer_list<lb_ref> _lbs = {})
-                    : lbs{_lbs}, init{_init}, val{} {}
+                    : lbs{_lbs}, val{_init} {}
 
             gen_core(const T (&arr)[N], initializer_list<lb_ref> _lbs = {})
                     : lbs{_lbs}, val{arr} {}
