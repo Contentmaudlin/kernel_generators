@@ -33,7 +33,7 @@ private:
 };
 
 int main() {
-    /* str_tok g{"Bjarne, Ken, Dennis", ", "};
+     str_tok g{"Bjarne, Ken, Dennis", ", "};
      vector<string> v(g.forall().begin(), g.forall().end());
-     for (auto &x : v) cout << x << endl;*/
+     for (auto &x : v) cout << x << endl;
 }
