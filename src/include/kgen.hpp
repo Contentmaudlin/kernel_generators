@@ -90,11 +90,8 @@ public:
     }
 
     bool operator==(abstract_gen<T, N> &other) { return this->get() == other; }
-
     bool operator==(gen_ref &other) { return this->get() == other.get(); }
-
     bool operator!=(abstract_gen<T, N> &other) { return this->get() != other; }
-
     bool operator!=(gen_ref &other) { return this->get() != other.get(); }
 };
 
@@ -131,7 +128,7 @@ struct until_gen : abstract_gen<T, N> {
     }
 
     bool operator!=(const abstract_gen<T, N> &rhs) const override {
-        return !(g.at_eog() || this->stop) || !rhs.at_eog();
+        return !(*this == rhs);
     }
 
     class until_generable {
@@ -196,7 +193,7 @@ struct until_n_gen : abstract_gen<T, N> {
     }
 
     bool operator!=(const abstract_gen<T, N> &rhs) const override {   
-        return !(g.at_eog() || this->stop) || !rhs.at_eog();
+        return !(*this == rhs);
     }
 
     class until_n_generable {
@@ -254,7 +251,7 @@ struct map_gen : abstract_gen<T, N> {
     }
 
     bool operator!=(const abstract_gen<T, N> &rhs) const override {   
-        return !g.at_eog() || !rhs.at_eog();
+        return !(*this == rhs);
     }
 
 public:
@@ -316,7 +313,7 @@ struct filter_gen : public abstract_gen<T, N> {
     }
 
     bool operator!=(const abstract_gen<T,N> &rhs) const override {   
-        return !g.at_eog() || !rhs.at_eog();
+        return !(*this == rhs);
     }
 
 public:
@@ -594,12 +591,9 @@ public:
         return this->at_eog() && rhs.at_eog();
     }
      
-    // DeMorgan's law, look it up ;^)
     bool operator!=(const abstract_gen<T, N> &rhs) const override { 
-        return !this->at_eog() || !rhs.at_eog();
+        return !(*this  == rhs);
     }
-
-    // gen(const gen &) = delete;
 
     gen &operator=(const gen &) = delete;
 
