@@ -22,9 +22,12 @@ int main() {
     cout << *++g << endl;
     cout << *++g << endl;
     */
-    cout << *g << endl;
-    g.forall().map<string>([](int a) -> std::string { 
-        return string ("hi: ") + std::to_string(a); });
+//    cout << *g << endl;
+//   
+    for(auto x : g.forall().map<string>([](int a) -> std::string { 
+        return string ("hi: ") + std::to_string(a); })) {
+        cout << x << endl;
+        }
 
     /*
     for(auto &x : g.forall().map<string>([](int a) -> std::string 
@@ -48,7 +51,7 @@ int main() {
     assert(*++g == 233);
     */
 
-    //for (auto& x : g.forall()) cout << x << endl;
+//    for (auto x : g.forall()) cout << x << endl;
     // g.forall()
 //    g.forall().map<string>([](int a) -> std::string { return std::to_string(a); });
 

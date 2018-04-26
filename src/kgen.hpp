@@ -10,6 +10,7 @@
 #include <memory>
 
 namespace kgen {
+
     /* main generator class */
 
   /*
@@ -29,6 +30,10 @@ namespace kgen {
     }
     */
 
+    class eog_tag { };
+
+    template<typename T, int N> class gen;
+
     template<typename T, int N = 0>
     struct abstract_gen {
       virtual T next() = 0; 
@@ -38,45 +43,84 @@ namespace kgen {
       virtual bool at_eog() const = 0;
       virtual bool operator==(const abstract_gen &rhs) const = 0;
       virtual bool operator!=(const abstract_gen &rhs) const = 0;
+      virtual abstract_gen &eoggen() = 0;
+    };
+
+    template<typename T, int N>
+    class gen_ref : public std::reference_wrapper<abstract_gen<T, N>> {
+    public:
+      typedef std::input_iterator_tag iterator_category;
+      typedef T value_type;
+      typedef T &reference;
+      typedef T *pointer;
+      typedef ptrdiff_t difference_type;
+
+      const T operator*() { return *this->get(); }
+
+      gen_ref &operator++() {
+        ++this->get();
+        return *this;
+      }
+
+      gen_ref &operator++(int) {
+        ++this->get();
+        return *this;
+      }
+
+      bool operator==(abstract_gen<T, N> &other) { return this->get() == other; }
+
+      bool operator==(gen_ref &other) { return this->get() == other.get(); }
+
+      bool operator!=(abstract_gen<T, N> &other) { return this->get() != other; }
+
+      bool operator!=(gen_ref &other) { return this->get() != other.get(); }
     };
 
     template<typename K, typename L, int X>
     struct map_gen : abstract_gen<K, X> {
-      abstract_gen<L, X> &gen;
+      abstract_gen<L, X> &g;
 
       std::function<K(L)> map_fun;
 
-      map_gen(abstract_gen<L, X> &g, std::function<K(L)> _map_fun)
-        : gen(g), map_fun{_map_fun} { }
+      map_gen(abstract_gen<L, X> &g_, std::function<K(L)> _map_fun)
+        : g(g_), map_fun{_map_fun} { }
+
+      constexpr explicit map_gen(eog_tag) : 
+        g{*std::make_shared<gen<L,X>>(gen<L,X>{})} { }
 
       K next() override {
-        return map_fun(gen.next());
+        return map_fun(g.next());
       }
 
       K prev(int i) override {
-        return map_fun(gen.prev(i));
+        return map_fun(g.prev(i));
       }
 
       const K operator*() override {
-        L t = *gen;
+        L t = *g;
         return map_fun(t);
       }
 
       map_gen<K, L, X> &operator++() override {
-        ++gen;
+        ++g;
         return *this;
       }
 
+      map_gen<K, L, X> &eoggen() override {
+          map_gen<K, L, X> terminal{eog_tag{}};
+          return terminal;
+      }
+
       bool at_eog() const override {
-        return gen.at_eog();
+        return g.at_eog();
       }
 
       bool operator==(const abstract_gen<K, X> &rhs) const override {
-        return gen.at_eog() && rhs.at_eog();
+        return g.at_eog() && rhs.at_eog();
       }
 
       bool operator!=(const abstract_gen<K,X> &rhs) const override {   
-        return !gen.at_eog() || !rhs.at_eog();
+        return !g.at_eog() || !rhs.at_eog();
       }
 
       public:
@@ -91,15 +135,13 @@ namespace kgen {
           : g{std::make_shared<abstract_gen<T, N>>(g_)} { }
           */
 
-          /*
-          gen_ref begin() {
-              return gen_ref{g};
+          gen_ref<K, X> begin() {
+              return gen_ref<K, X>{g};
           }
 
-          const gen_ref &end() {
-            return gen_ref{eoggen()};
+          const gen_ref<K, X> &end() {
+            return gen_ref<K, X>{g.eoggen()};
           }
-          */
 
           /*
           template<typename K>
@@ -112,44 +154,11 @@ namespace kgen {
 
    };
 
-    template<typename T, int N>
-    class gen;
-
     template<typename T, int N = 0>
     class gen : public abstract_gen<T, N> {
         static_assert(N >= 0, "N must be positive or zero");
         // subclasses
     private:
-      class eog_tag { };
-      class gen_ref : public std::reference_wrapper<abstract_gen<T,N>> {
-      public:
-        typedef std::input_iterator_tag iterator_category;
-        typedef T value_type;
-        typedef T &reference;
-        typedef T *pointer;
-        typedef ptrdiff_t difference_type;
-
-        const T &operator*() { return *this->get(); }
-
-        gen_ref &operator++() {
-          ++this->get();
-          return *this;
-        }
-
-        gen_ref &operator++(int) {
-          ++this->get();
-          return *this;
-        }
-
-        bool operator==(gen &other) { return this->get() == other; }
-
-        bool operator==(gen_ref &other) { return this->get() == other.get(); }
-
-        bool operator!=(gen &other) { return this->get() != other; }
-
-        bool operator!=(gen_ref &other) { return this->get() != other.get(); }
-      };
-
       class generable {
         abstract_gen<T, N> &g;
       public:
@@ -161,18 +170,18 @@ namespace kgen {
           : g{std::make_shared<abstract_gen<T, N>>(g_)} { }
           */
 
-          gen_ref begin() {
-              return gen_ref{g};
+          gen_ref<T, N> begin() {
+              return gen_ref<T, N>{g};
           }
 
-          const gen_ref &end() {
-            return gen_ref{eoggen()};
+          const gen_ref<T, N> &end() {
+            return gen_ref<T, N>{g.eoggen()};
           }
 
           template<typename K>
-          typename map_gen<T, K, N>::map_generable map(std::function<K(T)> map_fun) {
+          typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
             map_gen<K, T, N> m{g, map_fun};
-            return map_gen<K, T, N>::map_generable(m);
+            return typename map_gen<K, T, N>::map_generable(m);
           }
 
           /*
@@ -324,7 +333,6 @@ namespace kgen {
         }
 
       protected:
-        gen() : state{std::make_shared<gen_core>()} { }
 
         gen(std::initializer_list<std::reference_wrapper<lb_base>>_lbs) : 
           state{std::make_shared<gen_core>(_lbs)}  { 
@@ -346,8 +354,10 @@ namespace kgen {
         T prev(int i) override { return state->val[i]; }
 
       public:
-        static gen &eoggen() {
-          static gen terminal{eog_tag{}};
+        gen() : state{std::make_shared<gen_core>()} { }
+
+        gen &eoggen() override {
+          gen terminal{eog_tag{}};
           return terminal;
         }
         const T operator*() override {
@@ -386,7 +396,7 @@ namespace kgen {
           return !this->at_eog() || !rhs.at_eog();
         }
 
-        gen(const gen &) = delete;
+ //       gen(const gen &) = delete;
 
         gen &operator=(const gen &) = delete;
 
