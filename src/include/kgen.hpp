@@ -414,11 +414,16 @@ private:
             return *this;
         }
 
+        template<int I>
+        const U &prev() {
+            static_assert(I < 0, "can only lookback");
+            static_assert(-I <= Max);
+            return buf[(_lb_base::ctr + I + Max + 1) % (Max + 1)];
+        }
+
         const U &operator[](int i) {
-            if (i > 0)
+            if (i >= 0)
                 throw std::invalid_argument("It's called lookback not lookahead!");
-            if (i == 0 && !_lb_base::can_read)
-                throw std::invalid_argument("Can't read from unassigned value!");
             if (-i > Max)
                 throw std::invalid_argument(
                         "Can't lb_core more than " + std::to_string(Max) +
@@ -469,6 +474,11 @@ protected:
         lookback &operator=(const U &val) {
             this->template get<U, Max>()->operator=(val);
             return *this;
+        }
+
+        template<int I>
+        const U &prev() {
+            return lb_base::template get<U, Max>()->template prev<I>();
         }
 
         const U &operator[](int i) { return lb_base::template get<U, Max>()->operator[](i); }
@@ -527,7 +537,10 @@ protected:
         throw std::out_of_range("Generator at end, can't read!");
     }
 
-    T prev(int i) { return state->val[i]; }
+    const T &prev(int i) { return state->val[i]; }
+
+    template<int I>
+    const T &prev() { return state->val.template prev<I>(); }
 
 public:
     gen() : state{std::make_shared<gen_core>()} { }
