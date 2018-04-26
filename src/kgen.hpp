@@ -94,64 +94,64 @@ public:
     bool operator!=(gen_ref &other) { return this->get() != other.get(); }
 };
 
-template<typename K, typename L, int X>
-struct map_gen : abstract_gen<K, X> {
-    abstract_gen<L, X> &g;
+template<typename T, typename K, int N>
+struct map_gen : abstract_gen<T, N> {
+    abstract_gen<K, N> &g;
 
-    std::function<K(L)> map_fun;
+    std::function<T(K)> map_fun;
 
-    map_gen(abstract_gen<L, X> &g_, std::function<K(L)> _map_fun)
+    map_gen(abstract_gen<K, N> &g_, std::function<T(K)> _map_fun)
         : g(g_), map_fun{_map_fun} { }
 
-    const K operator*() override {
-        L t = *g;
-        return map_fun(t);
+    const T operator*() override {
+        K k = *g;
+        return map_fun(k);
     }
 
-    map_gen<K, L, X> &operator++() override {
+    map_gen<T, K, N> &operator++() override {
         ++g;
         return *this;
     }
 
-    abstract_gen<K, X> &eoggen() {
-        return kgen::eoggen<K, X>();
+    abstract_gen<T, N> &eoggen() {
+        return kgen::eoggen<T, N>();
     }
 
     bool at_eog() const override {
         return g.at_eog();
     }
 
-    bool operator==(const abstract_gen<K, X> &rhs) const override {
+    bool operator==(const abstract_gen<T, N> &rhs) const override {
         return g.at_eog() && rhs.at_eog();
     }
 
-    bool operator!=(const abstract_gen<K,X> &rhs) const override {   
+    bool operator!=(const abstract_gen<T, N> &rhs) const override {   
         return !g.at_eog() || !rhs.at_eog();
     }
 
 public:
     class map_generable {
-    map_gen<K, L, X> g;
+    map_gen<T, K, N> g;
     public:
-        explicit map_generable(map_gen<K, L, X> g_) : g{g_} { } 
+        explicit map_generable(map_gen<T, K, N> g_) : g{g_} { } 
 
-        gen_ref<K, X> begin() {
-            return gen_ref<K, X>{g};
+        gen_ref<T, N> begin() {
+            return gen_ref<T, N>{g};
         }
 
-        const gen_ref<K, X> &end() {
-            return gen_ref<K, X>{kgen::eoggen<K, X>()};
+        const gen_ref<T, N> &end() {
+            return gen_ref<T, N>{kgen::eoggen<T, N>()};
         }
 
         template<typename Z>
-        typename map_gen<Z, K, X>::map_generable map(std::function<Z(K)> map_fun) {
-            map_gen<Z, K, X> m{g, map_fun};
-            return typename map_gen<Z, K, X>::map_generable(m);
+        typename map_gen<Z, T, N>::map_generable map(std::function<Z(T)> map_fun) {
+            map_gen<Z, T, N> m{g, map_fun};
+            return typename map_gen<Z, T, N>::map_generable(m);
         }
 
-        typename filter_gen<K, X>::filter_generable filter(std::function<bool(K)> filter_fun) {
-            filter_gen<K, X> f{g, filter_fun};
-            return typename filter_gen<K, X>::filter_generable(f);
+        typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
+            filter_gen<T, N> f{g, filter_fun};
+            return typename filter_gen<T, N>::filter_generable(f);
         }
     };
 };
