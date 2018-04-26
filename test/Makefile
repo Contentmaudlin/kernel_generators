@@ -19,6 +19,7 @@ TEST_EXES = $(foreach t, $(TESTS), $(OUT_DIR)/$(t))
 TEST_OBJS = $(foreach t, $(TESTS), $(TEST_DIR)/$(t).o)
 
 KGEN_HEADERS = $(SRC_LN)/include/kgen.hpp
+IMPL_HEADERS = impl/*.hpp
 
 PHONY += default
 default: $(TEST_EXES)
@@ -34,7 +35,7 @@ $(TESTS): %: $(OUT_DIR)/%
 
 $(TEST_EXES): $(OUT_DIR)/%: $(TEST_DIR)/%.o | $(OUT_DIR)
 	$(CC) $(LDFLAGS) -o $@ $<
-$(TEST_OBJS): %.o: %.cpp $(KGEN_HEADERS)
+$(TEST_OBJS): %.o: %.cpp $(KGEN_HEADERS) $(IMPL_HEADERS)
 
 
 PHONY += clean

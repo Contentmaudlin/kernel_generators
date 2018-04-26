@@ -22,8 +22,11 @@ public:
             : gen<string>{{end_pos, delim_sz}}, s{s_}, delims{delims_} {}
 
     string next() override {
-        if (end_pos[-1] == string::npos) throw reached_eog{};
-        size_t start_pos = end_pos[-1] + delim_sz[-1];
+        //if (end_pos[-1] == string::npos) throw reached_eog{};
+        if (end_pos.prev<-1>() == string::npos) throw reached_eog{};
+
+        //size_t start_pos = end_pos[-1] + delim_sz[-1];
+        size_t start_pos = end_pos.prev<-1>() + delim_sz.prev<-1>();
         end_pos = string::npos;
         for (auto &d : delims) {
             size_t p = s.find(d, start_pos);
