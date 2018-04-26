@@ -64,7 +64,7 @@ namespace kgen {
     public:
         constexpr explicit terminal_gen() : eog{true} {}
 
-        const T &operator*() override { return T{}; }
+        const T &operator*() override { throw out_of_range("terminal reached"); }
 
         terminal_gen &operator++() override { return *this; }
 
