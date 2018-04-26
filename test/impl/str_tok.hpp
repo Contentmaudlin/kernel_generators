@@ -1,16 +1,25 @@
-#include <cassert>
+#ifndef __STR_TOK_HPP
+#define __STR_TOK_HPP
+
 #include <string>
 #include <vector>
-#include "kgen.hpp"
+#include <initializer_list>
+#include <kgen.hpp>
 
-using namespace std;
+using std::string;
+using std::size_t;
+using std::initializer_list;
+using std::vector;
 
-class str_tok : public kgen::gen<string> {
+namespace kgen {
+
+class str_tok : public gen<string> {
 public:
-    str_tok(string s_, string delim_) : kgen::gen<string>{{end_pos, delim_sz}}, s{s_}, delims{1, delim_} {}
+    str_tok(string s_, string delim_) :
+        gen<string>{{end_pos, delim_sz}}, s{s_}, delims{1, delim_} {}
 
     str_tok(string s_, initializer_list<string> delims_)
-            : kgen::gen<string>{{end_pos, delim_sz}}, s{s_}, delims{delims_} {}
+            : gen<string>{{end_pos, delim_sz}}, s{s_}, delims{delims_} {}
 
     string next() override {
         if (end_pos[-1] == string::npos) throw reached_eog{};
@@ -29,11 +38,9 @@ public:
 private:
     string s;
     vector<string> delims;
-    lookback <size_t> end_pos, delim_sz; // position of end of previously yielded substring and size of previously encountered delimiter
+    lookback<size_t> end_pos;   // position of end of previously yielded substr
+    lookback<size_t> delim_sz;  // size of previously encountered delimiter
 };
-
-int main() {
-     str_tok g{"Bjarne, Ken, Dennis", ", "};
-     vector<string> v(g.forall().begin(), g.forall().end());
-     for (auto &x : v) cout << x << endl;
 }
+
+#endif

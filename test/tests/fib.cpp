@@ -1,16 +1,11 @@
 #include <cassert>
-#include "kgen.hpp"
-
-class fib_gen : public kgen::gen<unsigned long long, 2> {
-    unsigned long long next() override {
-        return prev(-2) ? prev(-1) + prev(-2) : 1;
-    }
-};
+#include <kgen.hpp>
+#include <fib.hpp>
 
 int main() {
     using namespace std;
 
-    fib_gen g;
+    kgen::fib_gen g;
 
     /*
     cout << *g << endl;

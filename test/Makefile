@@ -1,29 +1,32 @@
-CXX = g++
-CXXFLAGS = -g -Wall -std=c++17 $(INCLUDE)
+TESTS = fib str_tok
+
 CC = g++
-SOURCEDIR=../src
-INCLUDE=-I $(SOURCEDIR)
-HEADERS=../src/kgen.hpp
+CXX = $(CC)
 
-TARGETS = str_tok fib fib_nobase
+INCLUDE = src/include impl
+CXXFLAGS = -g -Wall -std=c++17 $(foreach i, $(INCLUDE), -I$(i))
+LDFLAGS = -g
 
-default: $(TARGETS)
+TEST_DIR = tests
+OUT = out
+TEST_EXES = $(foreach t, $(TESTS), $(OUT)/$(t))
+TEST_OBJS = $(foreach t, $(TESTS), $(TEST_DIR)/$(t).o)
 
-fib:
+PHONY += default
+default: $(TEST_EXES)
 
-fib.o: $(HEADERS)
+PHONY += $(TESTS)
+$(TESTS): %: $(OUT)/%
 
-fib_nobase:
+$(TEST_EXES): $(OUT)/%: $(TEST_DIR)/%.o | $(OUT)
+	$(CC) $(LDFLAGS) -o $@ $<
+$(TEST_OBJS): %.o: %.cpp
 
-fib_nobase.o: $(HEADERS)
+$(OUT):
+	mkdir -p $@
 
-main_tester:
-
-main_tester.o: $(HEADERS)
-
-str_tok.o: $(HEADERS)
-
-str_tok:
-
+PHONY += clean
 clean:
-	rm -rf $(TARGETS) a.out *.o
+	rm -rf $(TEST_OBJS) $(OUT)
+
+.PHONY: $(PHONY)
