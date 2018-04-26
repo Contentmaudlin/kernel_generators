@@ -43,9 +43,30 @@ namespace kgen {
       virtual bool at_eog() const = 0;
       virtual bool operator==(const abstract_gen &rhs) const = 0;
       virtual bool operator!=(const abstract_gen &rhs) const = 0;
-      virtual abstract_gen &eoggen() = 0;
     };
 
+    template<typename T, int N = 0>
+    class terminal_gen : public abstract_gen<T, N> {
+      bool eog;
+      public: 
+        constexpr explicit terminal_gen() : eog{true} { }
+        T next() override { return T{}; }
+        T prev(int) override { return T{}; }
+        const T operator*() override { return T{}; }
+        terminal_gen &operator++() override { return *this; }
+        bool at_eog() const override { return this->eog; }
+        bool operator==(const abstract_gen<T, N> &rhs) const override 
+          { return false; }
+        bool operator!=(const abstract_gen<T, N> &rhs) const override
+          { return true; }
+    };
+
+    template<typename T, int N>
+    static abstract_gen<T, N> &eoggen() {
+      static terminal_gen<T, N> g{};
+      return g;
+    }
+    
     template<typename T, int N>
     class gen_ref : public std::reference_wrapper<abstract_gen<T, N>> {
     public:
@@ -85,9 +106,6 @@ namespace kgen {
       map_gen(abstract_gen<L, X> &g_, std::function<K(L)> _map_fun)
         : g(g_), map_fun{_map_fun} { }
 
-      constexpr explicit map_gen(eog_tag) : 
-        g{*std::make_shared<gen<L,X>>(gen<L,X>{})} { }
-
       K next() override {
         return map_fun(g.next());
       }
@@ -106,9 +124,8 @@ namespace kgen {
         return *this;
       }
 
-      map_gen<K, L, X> &eoggen() override {
-          map_gen<K, L, X> terminal{eog_tag{}};
-          return terminal;
+      abstract_gen<K, X> &eoggen() {
+        return kgen::eoggen<K, X>();
       }
 
       bool at_eog() const override {
@@ -140,7 +157,7 @@ namespace kgen {
           }
 
           const gen_ref<K, X> &end() {
-            return gen_ref<K, X>{g.eoggen()};
+            return gen_ref<K, X>{kgen::eoggen<K, X>()};
           }
 
           /*
@@ -151,7 +168,6 @@ namespace kgen {
           }
           */
       };
-
    };
 
     template<typename T, int N = 0>
@@ -175,7 +191,7 @@ namespace kgen {
           }
 
           const gen_ref<T, N> &end() {
-            return gen_ref<T, N>{g.eoggen()};
+            return gen_ref<T, N>{kgen::eoggen<T, N>()};
           }
 
           template<typename K>
@@ -356,10 +372,6 @@ namespace kgen {
       public:
         gen() : state{std::make_shared<gen_core>()} { }
 
-        gen &eoggen() override {
-          gen terminal{eog_tag{}};
-          return terminal;
-        }
         const T operator*() override {
             if (!state->init) {
                 set_next();
