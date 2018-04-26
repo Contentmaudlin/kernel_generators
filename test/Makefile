@@ -1,4 +1,5 @@
 TESTS = fib str_tok
+SRC_DIR = ../src
 
 CC = g++
 CXX = $(CC)
@@ -7,26 +8,36 @@ INCLUDE = src/include impl
 CXXFLAGS = -g -Wall -std=c++17 $(foreach i, $(INCLUDE), -I$(i))
 LDFLAGS = -g
 
+SRC_LN = src
+OUT_DIR = out
 TEST_DIR = tests
-OUT = out
-TEST_EXES = $(foreach t, $(TESTS), $(OUT)/$(t))
+
+TEST_EXES = $(foreach t, $(TESTS), $(OUT_DIR)/$(t))
 TEST_OBJS = $(foreach t, $(TESTS), $(TEST_DIR)/$(t).o)
+
+KGEN_HEADERS = $(SRC_LN)/include/kgen.hpp
 
 PHONY += default
 default: $(TEST_EXES)
 
-PHONY += $(TESTS)
-$(TESTS): %: $(OUT)/%
-
-$(TEST_EXES): $(OUT)/%: $(TEST_DIR)/%.o | $(OUT)
-	$(CC) $(LDFLAGS) -o $@ $<
-$(TEST_OBJS): %.o: %.cpp
-
-$(OUT):
+$(KGEN_HEADERS): | $(SRC_LN)
+$(SRC_LN):
+	ln -s $(SRC_DIR) $@
+$(OUT_DIR):
 	mkdir -p $@
+
+PHONY += $(TESTS)
+$(TESTS): %: $(OUT_DIR)/%
+
+$(TEST_EXES): $(OUT_DIR)/%: $(TEST_DIR)/%.o | $(OUT_DIR)
+	$(CC) $(LDFLAGS) -o $@ $<
+$(TEST_OBJS): %.o: %.cpp $(KGEN_HEADERS)
+
 
 PHONY += clean
 clean:
-	rm -rf $(TEST_OBJS) $(OUT)
+	rm -rf $(TEST_OBJS) $(OUT_DIR)
+mrproper: clean
+	rm -rf $(SRC_LN)
 
 .PHONY: $(PHONY)
