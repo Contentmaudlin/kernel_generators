@@ -10,29 +10,10 @@
 #include <memory>
 
 namespace kgen {
-
-    /* main generator class */
-
-    /*
-    template<typename U, int N = 0>
-    class gen {
-
-      gen(std::initializer_list<std::reference_wrapper<lb_base>>_lbs) : p{new gen{_lbs}} { }
-
-      explicit gen(const T &init, std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) : 
-        p{new gen{init, _lbs}} { }
-
-      explicit gen(const T (&arr)[N], std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) : 
-        p{new gen{arr, _lbs}} { }
-
-      shared_ptr<gen> p;
-
-    }
-    */
-
 class eog_tag {};
 
 template<typename T, int N> class gen;
+template<typename T, typename K, int N> struct map_gen;
 template<typename T, int N> struct filter_gen;
 
 template<typename T, int N = 0>
@@ -94,6 +75,75 @@ public:
     bool operator!=(gen_ref &other) { return this->get() != other.get(); }
 };
 
+template<typename T, int N>
+struct until_gen : abstract_gen<T, N> {
+    abstract_gen<T, N> &g;
+
+    std::function<bool(T)> ufun;
+    bool stop = false;
+
+    until_gen(abstract_gen<T, N> &g_, std::function<bool(T)> _ufun)
+        : g(g_), ufun{_ufun} { }
+
+    const T operator*() override {
+        T t = *g;
+        if (ufun(t)) { std::cout << "should stop!" << std::endl; stop = true; } 
+        return t;
+    }
+
+    until_gen<T, N> &operator++() override {
+        ++g;
+        if (ufun(*g)) stop = true;
+        return *this;
+    }
+
+    until_gen<T, N> &eoggen() {
+        return kgen::eoggen<T, N>();
+    }
+
+    bool at_eog() const override {
+        return g.at_eog() || this->stop;
+    }
+
+    bool operator==(const abstract_gen<T, N> &rhs) const override {
+        return (g.at_eog() || this->stop) && rhs.at_eog();
+    }
+
+    bool operator!=(const abstract_gen<T, N> &rhs) const override {   
+        return !(g.at_eog() || this->stop) || !rhs.at_eog();
+    }
+
+    class until_generable {
+    until_gen<T, N> g;
+    public:
+        explicit until_generable(until_gen<T, N> g_) : g{g_} { } 
+
+        gen_ref<T, N> begin() {
+            return gen_ref<T, N>{g};
+        }
+
+        const gen_ref<T, N> &end() {
+            return gen_ref<T, N>{kgen::eoggen<T, N>()};
+        }
+
+        template<typename K>
+        typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
+            map_gen<K, T, N> m{g, map_fun};
+            return typename map_gen<K, T, N>::map_generable(m);
+        }
+
+        typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
+            filter_gen<T, N> f{g, filter_fun};
+            return typename filter_gen<T, N>::filter_generable(f);
+        }
+
+        typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
+            until_gen<T, N> u{g, until_fun};
+            return typename until_gen<T, N>::until_generable(u);
+        }
+    };
+};
+
 template<typename T, typename K, int N>
 struct map_gen : abstract_gen<T, N> {
     abstract_gen<K, N> &g;
@@ -152,6 +202,11 @@ public:
         typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
+        }
+
+        typename until_gen<T, N>::until_gennerable unntil(std::function<bool(T)> until_fun) {
+            until_gen<T, N> u{g, until_fun};
+            return typename until_gen<T, N>::until_generable(u);
         }
     };
 };
@@ -216,6 +271,11 @@ public:
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
         }
+
+        typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
+            until_gen<T, N> u{g, until_fun};
+            return typename until_gen<T, N>::until_generable(u);
+        }
     };
 };
 
@@ -227,12 +287,6 @@ private:
         abstract_gen<T, N> &g;
     public:
         explicit generable(abstract_gen<T, N> &g_) : g{g_} { } 
-
-        /*
-        template <typename K>
-        explicit generable<K, N>(map_gen<T, K, N> &&g_) 
-        : g{std::make_shared<abstract_gen<T, N>>(g_)} { }
-        */
 
         gen_ref<T, N> begin() {
             return gen_ref<T, N>{g};
@@ -253,13 +307,10 @@ private:
             return typename filter_gen<T, N>::filter_generable(f);
         }
 
-        /*
-        template<typename K>
-        generable map(std::function<K(T)> map_fun) {
-          map_gen<K, T, N> m{g, map_fun};
-          return generable{m};
-        }
-        */
+        typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
+            until_gen<T, N> u{g, until_fun};
+            return typename until_gen<T, N>::until_generable(u);
+           }
       };
 
       class _lb_base {
@@ -353,13 +404,8 @@ protected:
 
         explicit lookback(const U(&arr)[Max]) : lb_base{std::make_shared<_lookback<U, Max>>(arr)} {}
 
-        //template<class... Args>
-        //lookback(Args &&... args) :
-        //  lb_base{new _lookback<U, Max>(std::forward<Args>(args)...)} {}
-
         lookback &operator=(const U &val) {
             this->template get<U, Max>()->operator=(val);
-            //static_pointer_cast<std::shared_ptr<_lookback<U, Max>>>(lb_base::p)->operator=(val);
             return *this;
         }
 
@@ -465,13 +511,7 @@ public:
 
 private: // member variables
     std::shared_ptr<gen_core> state;
-    //std::vector<std::reference_wrapper<lb_base>> lbs;
-    //bool init = false;
-    //bool eog = false;
-    //lookback<T, N> val;
 };
-//    template<typename T, int N>
-//    generable<T,N> gen<T, N>::forall() { return generable{*this}; }
 } // namespace kgen
 
 #endif
