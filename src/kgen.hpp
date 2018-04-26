@@ -36,8 +36,6 @@ template<typename T, int N> class gen;
 
 template<typename T, int N = 0>
 struct abstract_gen {
-    virtual T next() = 0; 
-    virtual T prev(int) = 0;
     virtual const T operator*() = 0;
     virtual abstract_gen &operator++() = 0;
     virtual bool at_eog() const = 0;
@@ -50,8 +48,6 @@ class terminal_gen : public abstract_gen<T, N> {
 bool eog;
 public: 
     constexpr explicit terminal_gen() : eog{true} { }
-    T next() override { return T{}; }
-    T prev(int) override { return T{}; }
     const T operator*() override { return T{}; }
     terminal_gen &operator++() override { return *this; }
     bool at_eog() const override { return this->eog; }
@@ -106,14 +102,6 @@ struct map_gen : abstract_gen<K, X> {
     map_gen(abstract_gen<L, X> &g_, std::function<K(L)> _map_fun)
         : g(g_), map_fun{_map_fun} { }
 
-    K next() override {
-        return map_fun(g.next());
-    }
-
-    K prev(int i) override {
-        return map_fun(g.prev(i));
-    }
-
     const K operator*() override {
         L t = *g;
         return map_fun(t);
@@ -146,12 +134,6 @@ public:
     public:
         explicit map_generable(map_gen<K, L, X> g_) : g{g_} { } 
 
-         /*
-         template <typename K>
-         explicit generable<K, N>(map_gen<T, K, N> &&g_) 
-         : g{std::make_shared<abstract_gen<T, N>>(g_)} { }
-         */
-
         gen_ref<K, X> begin() {
             return gen_ref<K, X>{g};
         }
@@ -165,15 +147,65 @@ public:
             map_gen<Z, K, X> m{g, map_fun};
             return typename map_gen<Z, K, X>::map_generable(m);
         }
+    };
+};
 
-          /*
-          template<typename K>
-          generable map(std::function<K(T)> map_fun) {
+template<typename T, int N>
+struct filter_gen : public abstract_gen<T, N> {
+    abstract_gen<T, N> &g;
+
+    std::function<bool(T)> filter_fun;
+
+    filter_gen(abstract_gen<T, N> &g_, std::function<bool(T)> _filter_fun)
+        : g(g_), filter_fun{_filter_fun} { }
+
+    const T operator*() override {
+        while (!filter_fun(*g)) ++g;
+        return *g;
+    }
+
+    filter_gen<T, N> &operator++() override {
+        ++g;
+        while (!filter_fun(*g)) ++g;
+        return *this;
+    }
+
+    abstract_gen<T, N> &eoggen() {
+        return kgen::eoggen<T, N>();
+    }
+
+    bool at_eog() const override {
+        return g.at_eog();
+    }
+
+    bool operator==(const abstract_gen<T, N> &rhs) const override {
+        return g.at_eog() && rhs.at_eog();
+    }
+
+    bool operator!=(const abstract_gen<T,N> &rhs) const override {   
+        return !g.at_eog() || !rhs.at_eog();
+    }
+
+public:
+    struct filter_generable {
+        filter_gen<T, N> g;
+    public:
+        explicit filter_generable(filter_gen<T, N> g_) : g{g_} { } 
+
+        gen_ref<T, N> begin() {
+            return gen_ref<T, N>{g};
+        }
+
+        const gen_ref<T, N> &end() {
+            return gen_ref<T, N>{kgen::eoggen<T, N>()};
+        }
+
+        template<typename K>
+        typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
             map_gen<K, T, N> m{g, map_fun};
-            return generable{m};
-          }
-          */
-      };
+            return typename map_gen<K, T, N>::map_generable(m);
+        }
+    };
 };
 
 template<typename T, int N = 0>
@@ -203,6 +235,11 @@ private:
         typename map_gen<K, T, N>::map_generable map(std::function<K(T)> map_fun) {
             map_gen<K, T, N> m{g, map_fun};
             return typename map_gen<K, T, N>::map_generable(m);
+        }
+
+        typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
+            filter_gen<T, N> f{g, filter_fun};
+            return typename filter_gen<T, N>::filter_generable(f);
         }
 
         /*
@@ -367,11 +404,11 @@ protected:
             std::initializer_list<std::reference_wrapper<lb_base>> _lbs = {}) 
             : state{_lbs, arr} { }
 
-    virtual T next() override {
+    virtual T next() {
         throw std::out_of_range("Generator at end, can't read!");
     }
 
-    T prev(int i) override { return state->val[i]; }
+    T prev(int i) { return state->val[i]; }
 
 public:
     gen() : state{std::make_shared<gen_core>()} { }
