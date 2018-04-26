@@ -18,30 +18,26 @@ int main() {
     cout << *++g << endl;
     */
 //    cout << *g << endl;
-//   
-   /*
-    for(auto x : g.forall().filter<string>([](int a) -> std::string { 
-        return string ("hi: ") + std::to_string(a); })) {
-        cout << x << endl;
-        }
-        */
-
-    /*for(auto x : g.until_n(10).map(
-                [](int a) { return string("hi") + std::to_string(a); }).filter([](string a) { return true; })) {
-            cout << x << endl;
-        }*/
-
-    /*  for(auto x : g.until_n(3)) {
+//   ss
+    /*  for(auto x : g.forall().map([](unsigned long long a) {
+          return string ("hi: ") + std::to_string(a); })) {
           cout << x << endl;
-      }*/
+          }*/
 
-    /*
-    for(auto &x : g.forall().map<string>([](int a) -> std::string 
+    /* for(auto x : g.until_n(10).map(
+                 [](int a) { return string("hi") + std::to_string(a); }).filter([](string a) { return true; })) {
+             cout << x << endl;
+         }*/
+
+    /*    for(auto x : g.until_n(3)) {
+            cout << x << endl;
+        }
+  */
+    for (auto &x : g.forall().map([](int a) -> std::string
           { return string("hi: ") + std::to_string(a) ; })) {
                                                               cout << x << endl;
                                                             }
-                                                            */
-    /*
+/*
     assert(*g == 1);
     assert(*++g == 1);
     assert(*++g == 2);
@@ -55,8 +51,8 @@ int main() {
     assert(*++g == 89);
     assert(*++g == 144);
     assert(*++g == 233);
-    */
 
+*/
 
 
 //    for (auto x : g.forall()) cout << x << endl;
