@@ -144,17 +144,6 @@ struct until_gen : abstract_gen<T, N> {
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
         }
-
-        typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
-            until_gen<T, N> u{g, until_fun};
-            return typename until_gen<T, N>::until_generable(u);
-        }
-
-        typename until_n_gen<T, N>::until_n_generable until_n(int until)
-        {
-            until_n_gen<T, N> u{g, until};
-            return typename until_n_gen<T, N>::until_n_generable{u};
-        }
     };
 };
 
@@ -224,17 +213,6 @@ struct until_n_gen : abstract_gen<T, N> {
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
         }
-
-        typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
-            until_gen<T, N> u{g, until_fun};
-            return typename until_gen<T, N>::until_generable(u);
-        }
-
-        typename until_n_gen<T, N>::until_n_generable until_n(int until)
-        {
-            until_n_gen<T, N> u{g, until};
-            return typename until_n_gen<T, N>::until_n_generable{u};
-        }
     };
 };
 
@@ -297,17 +275,6 @@ public:
         typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
-        }
-
-        typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
-            until_gen<T, N> u{g, until_fun};
-            return typename until_gen<T, N>::until_generable(u);
-        }
-
-        typename until_n_gen<T, N>::until_n_generable until_n(int until)
-        {
-            until_n_gen<T, N> u{g, until};
-            return typename until_n_gen<T, N>::until_n_generable{u};
         }
     };
 };
@@ -372,17 +339,6 @@ public:
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
         }
-
-        typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
-            until_gen<T, N> u{g, until_fun};
-            return typename until_gen<T, N>::until_generable(u);
-        }
-
-        typename until_n_gen<T, N>::until_n_generable until_n(int until)
-        {
-            until_n_gen<T, N> u{g, until};
-            return typename until_n_gen<T, N>::until_n_generable{u};
-        }
     };
 };
 
@@ -413,17 +369,6 @@ private:
         typename filter_gen<T, N>::filter_generable filter(std::function<bool(T)> filter_fun) {
             filter_gen<T, N> f{g, filter_fun};
             return typename filter_gen<T, N>::filter_generable(f);
-        }
-
-        typename until_gen<T, N>::until_generable until(std::function<bool(T)> until_fun) {
-            until_gen<T, N> u{g, until_fun};
-            return typename until_gen<T, N>::until_generable(u);
-           }
-
-        typename until_n_gen<T, N>::until_n_generable until_n(int until)
-        {
-            until_n_gen<T, N> u{g, until};
-            return typename until_n_gen<T, N>::until_n_generable{u};
         }
       };
 
@@ -609,6 +554,16 @@ public:
     bool at_eog() const override { return state->eog; }
 
     generable forall() { return generable{*this}; }
+
+    typename until_gen<T, N>::until_generable until(std::function<bool(T)> f) {
+        until_gen<T, N> u{*this, f};
+        return typename until_gen<T, N>::until_generable{u};
+    }
+
+    typename until_n_gen<T, N>::until_n_generable until_n(int n) {
+        until_n_gen<T, N> u{*this, n};
+        return typename until_n_gen<T, N>::until_n_generable{u};
+    }
 
     bool operator==(const abstract_gen<T, N> &rhs) const override { 
       return this->at_eog() && rhs.at_eog();

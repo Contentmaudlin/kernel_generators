@@ -34,6 +34,13 @@ private:
 
 int main() {
      str_tok g{"Bjarne, Ken, Dennis", ", "};
-     vector<string> v(g.forall().begin(), g.forall().end());
-     for (auto &x : v) cout << x << endl;
+
+     for(auto x : g.until([](string s){ return s[0] == 'D'; })) { 
+             cout << x << endl;
+     }
+     /*
+     for(auto x : g.forall().until([](string s){ return s[0] == 'B'; })) {
+         cout << x << endl;
+     }
+     */
 }
