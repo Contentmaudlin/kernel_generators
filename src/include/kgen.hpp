@@ -523,9 +523,10 @@ namespace kgen {
             const U &operator*() { return lb_base::template get<U, Max>()->operator*(); }
         };
 
+		typedef reference_wrapper<lb_base> lb_ref;
         class gen_core {
         public:
-            vector<reference_wrapper<lb_base>> lbs;
+            vector<lb_ref> lbs;
             bool init = false;
             bool eog = false;
             lookback<T, N> val;
@@ -534,13 +535,13 @@ namespace kgen {
 
             gen_core(bool _eog) : lbs{}, eog{_eog}, val{} {}
 
-            gen_core(const T &_init, initializer_list<reference_wrapper<lb_base>> _lbs = {})
+            gen_core(const T &_init, initializer_list<lb_ref> _lbs = {})
                     : lbs{_lbs}, init{_init}, val{} {}
 
-            gen_core(const T (&arr)[N], initializer_list<reference_wrapper<lb_base>> _lbs = {})
+            gen_core(const T (&arr)[N], initializer_list<lb_ref> _lbs = {})
                     : lbs{_lbs}, val{arr} {}
 
-            gen_core(initializer_list<reference_wrapper<lb_base>> _lbs)
+            gen_core(initializer_list<lb_ref> _lbs)
                     : lbs{_lbs}, val{} {}
         };
 
@@ -561,18 +562,18 @@ namespace kgen {
 
     protected:
 
-        gen(initializer_list<reference_wrapper<lb_base>> _lbs) :
+        gen(initializer_list<lb_ref> _lbs) :
                 state{make_shared<gen_core>(_lbs)} {
             state->lbs = _lbs;
             state->val = lookback<T, N>{};
         }
 
         explicit gen(const T &init,
-                     initializer_list<reference_wrapper<lb_base>> _lbs = {})
+                     initializer_list<lb_ref> _lbs = {})
                 : state{init, _lbs} {}
 
         explicit gen(const T (&arr)[N],
-                     initializer_list<reference_wrapper<lb_base>> _lbs = {})
+                     initializer_list<lb_ref> _lbs = {})
                 : state{_lbs, arr} {}
 
         virtual T next() {
