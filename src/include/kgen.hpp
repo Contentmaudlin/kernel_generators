@@ -3,11 +3,15 @@
 
 #include <iostream>
 #include <vector>
+#include <queue>
 #include <array>
 #include <algorithm>
 #include <exception>
 #include <functional>
 #include <memory>
+#include <thread>
+#include <mutex>
+
 
 namespace kgen {
     using std::array;
@@ -528,8 +532,12 @@ namespace kgen {
         constexpr explicit gen(eog_tag) : state{make_shared<gen_core>(true)} {}
 
         void set_next() {
-            try { state->val = next(); }
-            catch (reached_eog &e) { state->eog = true; }
+            try {
+                state->val = next();
+            }
+            catch (reached_eog &e) {
+                state->eog = true;
+            }
         }
 
     protected:
@@ -556,7 +564,26 @@ namespace kgen {
         gen &eog_gen() { return kgen::eog_gen<T, N>(); }
 
         const T &operator*() override {
-            if (state->eog) throw out_of_range("Generator has reached end!");
+            std::unique_lock<std::mutex> lock(this->mtx);
+            if (this->tcount) {
+                if (!this->q.empty())
+                    return this->q.front();
+                else {
+                    c.wait(lock);
+                    return this->q.front();
+                }
+            }
+            else {
+                if (!this->q.empty())
+                    return this->q.front();
+                else
+                    return return_internal();
+            }
+        }
+
+        const T &return_internal() {
+            if (state->eog)
+                throw std::out_of_range("Generator has reached an end!");
             if (!state->init) {
                 set_next();
                 state->init = true;
@@ -565,7 +592,27 @@ namespace kgen {
         }
 
         gen &operator++() override {
-            if (state->eog) throw out_of_range("Generator has reached end!");
+            std::unique_lock<std::mutex> lock(this->mtx);
+            if (this->tcount) {
+                if (!this->q.empty())
+                    this->q.pop();
+                else {
+                    c.wait(lock);
+                    this->q.pop();
+                }
+            }
+            else {
+                if (!this->q.empty())
+                    this->q.pop();
+                else
+                    advance_internal();
+            }
+            return *this;
+        }
+
+        void advance_internal() {
+            if (state->eog)
+                throw std::out_of_range("Generator has reached an end!");
             if (!state->init) {
                 set_next();
                 state->init = true;
@@ -573,12 +620,32 @@ namespace kgen {
             for (auto &&l : state->lbs) l.get().bump();
             state->val.bump();
             set_next();
-            return *this;
         }
 
-        bool at_eog() const override { return state->eog; }
+        bool at_eog() const override { 
+            return state->eog; 
+        }
 
         generable forall() { return generable{*this}; }
+
+        void threader() {
+            while(1) {
+                while(q.size() < this->tcount) {
+                    std::lock_guard<std::mutex> lock(this->mtx);
+                    if (state->init)
+                        advance_internal();
+                    q.push(return_internal());
+                    c.notify_one();
+                }
+            }
+        }
+
+        void thread(int n) {
+            this->tcount = n;
+            std::thread t(&gen<T, N>::threader, this);
+            t.detach();
+            return;
+        }
 
         typename until_gen<T, N>::until_generable until(function<bool(T)> f) {
             until_gen<T, N> u{*this, f};
@@ -600,7 +667,13 @@ namespace kgen {
         gen &operator=(const gen &) = delete;
 
     private: // member variables
-        shared_ptr<gen_core> state;
+        std::shared_ptr<gen_core> state;
+
+        /* threading */
+        int tcount = 0;
+        std::queue<T> q;
+        std::mutex mtx;
+        std::condition_variable c;
     };
 } // namespace kgen
 
