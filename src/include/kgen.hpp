@@ -500,7 +500,7 @@ protected:
         lookback<T, N> val;
         gen_core() : lbs{}, val{} {}
         gen_core(bool _eog) : lbs{}, eog{_eog}, val{} {} 
-        gen_core(const T& _init, initializer_list<lb_ref> _lbs = {})
+        gen_core(const T &_init, initializer_list<lb_ref> _lbs = {})
             : lbs{_lbs}, init{_init},val{} {} 
         gen_core(const T (&arr)[N], initializer_list<lb_ref> _lbs = {})
             : lbs{_lbs}, val{arr} {}
