@@ -26,10 +26,16 @@ int main() {
         }
         */
 
+    /*
     for(auto x : g.forall().filter([](int a) { return a % 2 == 0; }).map<string>(
                 [](int a) -> std::string { return string("hi") + std::to_string(a); })) {
             cout << x << endl;
         }
+        */
+
+    for(auto x : g.until_n(3)) {
+        cout << x << endl;
+    }
 
     /*
     for(auto &x : g.forall().map<string>([](int a) -> std::string 
