@@ -11,7 +11,8 @@ CXX = $(CC)
 
 INCLUDE = src/include impl
 CXXFLAGS = -g -Wall -std=c++17 $(foreach i, $(INCLUDE), -I$(i))
-LDFLAGS = -g
+LDLIBS = -pthread
+LDFLAGS = -g 
 
 SRC_LN = src
 OUT_DIR = out
@@ -36,7 +37,7 @@ PHONY += $(TESTS)
 $(TESTS): %: $(OUT_DIR)/%
 
 $(TEST_EXES): $(OUT_DIR)/%: $(TEST_DIR)/%.o | $(OUT_DIR)
-	$(CC) $(LDFLAGS) -o $@ $<
+	$(CC) $(LDFLAGS) -o $@ $< $(LDLIBS)
 $(TEST_OBJS): %.o: %.cpp $(KGEN_HEADERS) $(IMPL_HEADERS)
 
 
