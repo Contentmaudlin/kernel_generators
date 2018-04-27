@@ -669,7 +669,7 @@ namespace kgen {
         std::shared_ptr<gen_core> state;
 
         /* threading */
-        int tcount = 0;
+        size_t tcount = 0;
         std::queue<T> q;
         std::mutex mtx;
         std::condition_variable c;
