@@ -1,6 +1,6 @@
 # for ever <test>.cpp file you put in the tests/ directory
 # add it to the TESTS variable
-TESTS = fib str_tok
+TESTS = fib str_tok prime
 
 SRC_DIR = ../src
 
