@@ -32,7 +32,6 @@ namespace kgen {
     using std::to_string;
 
     using std::exception;
-    //using std::reached_eog;
     using std::invalid_argument;
 
     class eog_tag {
@@ -54,7 +53,8 @@ namespace kgen {
     private:
         std::string s;
     public:
-        reached_eog(const std::string &s_ = "Reached end of generator") : s{s_} {}
+        reached_eog(const std::string &s_ = "Reached end of generator")
+            : s{s_} {}
 
         const char *what() const noexcept override { return s.data(); }
     };
@@ -84,9 +84,11 @@ namespace kgen {
 
         bool at_eog() const override { return this->eog; }
 
-        bool operator==(const abstract_gen<T, N> &rhs) const override { return false; }
+        bool operator==(const abstract_gen<T, N> &rhs) const override
+            { return false; }
 
-        bool operator!=(const abstract_gen<T, N> &rhs) const override { return true; }
+        bool operator!=(const abstract_gen<T, N> &rhs) const override
+            { return true; }
     };
 
     template<typename T, int N>
@@ -116,13 +118,17 @@ namespace kgen {
             return *this;
         }
 
-        bool operator==(abstract_gen<T, N> &other) { return this->get() == other; }
+        bool operator==(abstract_gen<T, N> &other)
+            { return this->get() == other; }
 
-        bool operator==(gen_ref &other) { return this->get() == other.get(); }
+        bool operator==(gen_ref &other)
+            { return this->get() == other.get(); }
 
-        bool operator!=(abstract_gen<T, N> &other) { return !(*this == other); }
+        bool operator!=(abstract_gen<T, N> &other)
+            { return !(*this == other); }
 
-        bool operator!=(gen_ref &other) { return !(*this == other); }
+        bool operator!=(gen_ref &other)
+            { return !(*this == other); }
     };
 
     template<typename T, int N>
@@ -154,11 +160,11 @@ namespace kgen {
 
         bool at_eog() const override { return g.at_eog() || this->stop; }
 
-        bool operator==(const abstract_gen<T, N> &rhs) const override {
+        bool operator==(const abstract_gen<T, N> &rhs) const override
             { return (g.at_eog() || this->stop) && rhs.at_eog(); }
-        }
 
-        bool operator!=(const abstract_gen<T, N> &rhs) const override { return !(*this == rhs); }
+        bool operator!=(const abstract_gen<T, N> &rhs) const override
+            { return !(*this == rhs); }
 
         class until_generable {
             until_gen<T, N> g;
@@ -218,11 +224,11 @@ namespace kgen {
 
         bool at_eog() const override { return g.at_eog() || this->stop; }
 
-        bool operator==(const abstract_gen<T, N> &rhs) const override {
-            return (g.at_eog() || this->stop) && rhs.at_eog();
-        }
+        bool operator==(const abstract_gen<T, N> &rhs) const override
+            { return (g.at_eog() || this->stop) && rhs.at_eog(); }
 
-        bool operator!=(const abstract_gen<T, N> &rhs) const override { return !(*this == rhs); }
+        bool operator!=(const abstract_gen<T, N> &rhs) const override
+            { return !(*this == rhs); }
 
         class until_n_generable {
             until_n_gen<T, N> g;
@@ -277,9 +283,11 @@ namespace kgen {
 
         bool at_eog() const override { return g.at_eog(); }
 
-        bool operator==(const abstract_gen<T, N> &rhs) const override { return g.at_eog() && rhs.at_eog(); }
+        bool operator==(const abstract_gen<T, N> &rhs) const override
+            { return g.at_eog() && rhs.at_eog(); }
 
-        bool operator!=(const abstract_gen<T, N> &rhs) const override { return !(*this == rhs); }
+        bool operator!=(const abstract_gen<T, N> &rhs) const override
+            { return !(*this == rhs); }
 
     public:
         class map_generable {
@@ -336,9 +344,11 @@ namespace kgen {
 
         bool at_eog() const override { return g.at_eog(); }
 
-        bool operator==(const abstract_gen<T, N> &rhs) const override { return g.at_eog() && rhs.at_eog(); }
+        bool operator==(const abstract_gen<T, N> &rhs) const override
+            { return g.at_eog() && rhs.at_eog(); }
 
-        bool operator!=(const abstract_gen<T, N> &rhs) const override { return !(*this == rhs); }
+        bool operator!=(const abstract_gen<T, N> &rhs) const override
+            { return !(*this == rhs); }
 
     public:
         struct filter_generable {
@@ -423,9 +433,11 @@ namespace kgen {
 
             _lookback() : _lb_base(0) { for (auto &x : buf) x = U{}; }
 
-            explicit _lookback(const U &init) : _lb_base(0) { for (auto &x : buf) x = init; }
+            explicit _lookback(const U &init) : _lb_base(0)
+                { for (auto &x : buf) x = init; }
 
-            explicit _lookback(const U(&arr)[Max]) : _lb_base(0) { for (int i = 1; i <= Max; ++i) buf[i] = arr[i - 1]; }
+            explicit _lookback(const U(&arr)[Max]) : _lb_base(0)
+                { for (int i = 1; i <= Max; ++i) buf[i] = arr[i - 1]; }
 
             _lookback(_lookback &l) : _lb_base(l.ctr), buf(l.buf) {}
 
@@ -456,7 +468,7 @@ namespace kgen {
 
             const U &operator*() {
                 if (!_lb_base::can_read)
-                    throw invalid_argument("Can't read from unassigned value!");
+                    throw invalid_argument("Can't read from unassigned value");
                 return buf[_lb_base::ctr % (Max + 1)];
             }
 
@@ -497,11 +509,14 @@ namespace kgen {
             }
 
             template<int I>
-            const U &prev() { return lb_base::template get<U, Max>()->template prev<I>(); }
+            const U &prev()
+                { return lb_base::template get<U, Max>()->template prev<I>(); }
 
-            const U &operator[](int i) { return lb_base::template get<U, Max>()->operator[](i); }
+            const U &operator[](int i)
+                { return lb_base::template get<U, Max>()->operator[](i); }
 
-            const U &operator*() { return lb_base::template get<U, Max>()->operator*(); }
+            const U &operator*()
+                { return lb_base::template get<U, Max>()->operator*(); }
         };
 
         typedef reference_wrapper<lb_base> lb_ref;
@@ -656,10 +671,12 @@ namespace kgen {
             return typename until_n_gen<T, N>::until_n_generable{u};
         }
 
-        bool operator==(const abstract_gen<T, N> &rhs) const override { return this->at_eog() && rhs.at_eog(); }
+        bool operator==(const abstract_gen<T, N> &rhs) const override
+            { return this->at_eog() && rhs.at_eog(); }
 
         // DeMorgan's law, look it up ;^)
-        bool operator!=(const abstract_gen<T, N> &rhs) const override { return !(*this == rhs); }
+        bool operator!=(const abstract_gen<T, N> &rhs) const override
+            { return !(*this == rhs); }
 
         // gen(const gen &) = delete;
 
