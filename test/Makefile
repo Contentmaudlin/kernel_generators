@@ -1,6 +1,6 @@
 # for ever <test>.cpp file you put in the tests/ directory
 # add it to the TESTS variable
-TESTS = fib fib_basic fib_iter fib_until fib_until_n \
+TESTS = fib fib_basic fib_iter fib_until fib_until_n fib_map \
 	str_tok
 
 SRC_DIR = ../src
