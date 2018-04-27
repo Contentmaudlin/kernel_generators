@@ -20,7 +20,7 @@ int main() {
     vector<int> ys;
 
     unsigned long long cur = 1;
-    unsigned long long prv;
+    unsigned long long prv = 0;
 
     for (auto x : g.until_n(iters).map(f)) {
         xs.push_back(x);

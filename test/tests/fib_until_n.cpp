@@ -12,7 +12,7 @@ int main() {
     fib_gen g{};
 
     unsigned long long cur = 1;
-    unsigned long long prv;
+    unsigned long long prv = 0;
     int ctr = 0;
 
     for (auto x : g.until_n(iters)) {

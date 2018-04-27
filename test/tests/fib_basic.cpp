@@ -8,7 +8,7 @@ int main() {
     fib_gen g{};
 
     unsigned long long cur = 1;
-    unsigned long long prv;
+    unsigned long long prv = 0;
 
     for (int i = 0; i < 100; ++i) {
         assert(*g == cur);
