@@ -14,7 +14,7 @@ class prime_gen : public kgen::gen<unsigned long long, 1> {
         return true;
     }
     unsigned long long next() override {
-        int last{++prev(-1)};
+        int last = prev(-1);
         while (!is_prime(++last));
         return last;
     }
