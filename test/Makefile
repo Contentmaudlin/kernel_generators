@@ -2,7 +2,7 @@
 # add it to the TESTS variable
 TESTS = fib fib_basic fib_iter fib_until fib_until_n fib_map fib_map_lambda \
 	fib_filter_lambda fib_until_n_map \
-	str_tok
+	str_tok prime
 
 SRC_DIR = ../src
 

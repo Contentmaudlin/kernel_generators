@@ -6,8 +6,8 @@ int main() {
     using namespace std;
 
     kgen::fib_gen g;
+    g.thread(5);
 
-    /*
     cout << *g << endl;
     cout << *++g << endl;
     cout << *++g << endl;
@@ -16,7 +16,6 @@ int main() {
     cout << *++g << endl;
     cout << *++g << endl;
     cout << *++g << endl;
-    */
 //    cout << *g << endl;
 //   ss
     /*  for(auto x : g.forall().map([](unsigned long long a) {
@@ -33,10 +32,12 @@ int main() {
             cout << x << endl;
         }
   */
+    /*
     for (auto &x : g.forall().map([](int a) -> std::string
           { return string("hi: ") + std::to_string(a) ; })) {
                                                               cout << x << endl;
                                                             }
+                                                            */
 /*
     assert(*g == 1);
     assert(*++g == 1);
