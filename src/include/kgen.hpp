@@ -27,7 +27,7 @@ namespace kgen {
     using std::to_string;
 
     using std::exception;
-    using std::out_of_range;
+    //using std::reached_eog;
     using std::invalid_argument;
 
     class eog_tag {
@@ -44,6 +44,15 @@ namespace kgen {
     struct until_gen;
     template<typename T, int N>
     struct until_n_gen;
+
+    class reached_eog : public exception {
+    private:
+        std::string s;
+    public:
+        reached_eog(const std::string &s_ = "Reached end of generator") : s{s_} {}
+
+        const char *what() const noexcept override { return s.data(); }
+    };
 
     template<typename T, int N = 0>
     struct abstract_gen {
@@ -64,7 +73,7 @@ namespace kgen {
     public:
         constexpr explicit terminal_gen() : eog{true} {}
 
-        const T &operator*() override { throw out_of_range("terminal"); }
+        const T &operator*() override { throw reached_eog("terminal"); }
 
         terminal_gen &operator++() override { return *this; }
 
@@ -123,14 +132,14 @@ namespace kgen {
 
         const T &operator*() override {
             if (stop)
-                throw out_of_range("until_gen out of range!");
+                throw reached_eog("until_gen out of range!");
             if (ufun(*g)) stop = true;
             return *g;
         }
 
         until_gen<T, N> &operator++() override {
             if (stop)
-                throw out_of_range("until_gen out of range!");
+                throw reached_eog("until_gen out of range!");
             ++g;
             if (ufun(*g)) stop = true;
             return *this;
@@ -189,12 +198,12 @@ namespace kgen {
                 : g(g_), count_until{_count_until} {}
 
         const T &operator*() override {
-            if (counter >= count_until) throw out_of_range("End of until_n");
+            if (counter >= count_until) throw reached_eog("End of until_n");
             return *g;
         }
 
         until_n_gen<T, N> &operator++() override {
-            if (counter >= count_until) throw out_of_range("End of until_n");
+            if (counter >= count_until) throw reached_eog("End of until_n");
             if (++counter == count_until) stop = true;
             ++g;
             return *this;
@@ -307,14 +316,14 @@ namespace kgen {
 
         const T &operator*() override {
             try { while (!filter_fun(*g)) ++g; }
-            catch (out_of_range &e) {}
+            catch (reached_eog &e) {}
             return *g;
         }
 
         filter_gen<T, N> &operator++() override {
             ++g;
             try { while (!filter_fun(*g)) ++g; }
-            catch (out_of_range &e) {}
+            catch (reached_eog &e) {}
             return *this;
         }
 
@@ -451,10 +460,6 @@ namespace kgen {
         };
 
     protected:
-        class reached_eog : public exception {
-            const char *what() const throw() override { return "reached_eog"; }
-        };
-
         class lb_base {
         public:
             void bump() { p->bump(); }
@@ -533,6 +538,9 @@ namespace kgen {
         }
 
     protected:
+        gen() : state{make_shared<gen_core>()} {}
+
+        gen &eog_gen() { return kgen::eog_gen<T, N>(); }
 
         gen(initializer_list<lb_ref> _lbs)
                 : state{make_shared<gen_core>(_lbs)} {}
@@ -543,7 +551,7 @@ namespace kgen {
         explicit gen(const T (&arr)[N], initializer_list<lb_ref> _lbs = {})
                 : state{make_shared<gen_core>(arr, _lbs)} {}
 
-        virtual T next() { throw out_of_range("Generator at end"); }
+        virtual T next() { throw reached_eog("Generator at end"); }
 
         const T &prev(int i) { return state->val[i]; }
 
@@ -551,12 +559,8 @@ namespace kgen {
         const T &prev() { return state->val.template prev<I>(); }
 
     public:
-        gen() : state{make_shared<gen_core>()} {}
-
-        gen &eog_gen() { return kgen::eog_gen<T, N>(); }
-
         const T &operator*() override {
-            if (state->eog) throw out_of_range("Generator has reached end!");
+            if (state->eog) throw reached_eog("Generator has reached end!");
             if (!state->init) {
                 set_next();
                 state->init = true;
@@ -565,7 +569,7 @@ namespace kgen {
         }
 
         gen &operator++() override {
-            if (state->eog) throw out_of_range("Generator has reached end!");
+            if (state->eog) throw reached_eog("Generator has reached end!");
             if (!state->init) {
                 set_next();
                 state->init = true;
