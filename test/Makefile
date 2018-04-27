@@ -1,8 +1,8 @@
 # for ever <test>.cpp file you put in the tests/ directory
 # add it to the TESTS variable
 TESTS = fib fib_basic fib_iter fib_until fib_until_n fib_map fib_map_lambda \
-	fib_filter_lambda fib_until_n_map \
-	str_tok prime
+	str_tok prime \
+	fib_filter_lambda fib_until_n_map fib_map_filter \
 
 SRC_DIR = ../src
 
