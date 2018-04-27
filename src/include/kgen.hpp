@@ -438,7 +438,7 @@ namespace kgen {
             }
 
             template<int I>
-            const U &prev() {
+            U prev() {
                 static_assert(I < 0, "can only lookback");
                 static_assert(-I <= Max);
                 return buf[(_lb_base::ctr + I + Max + 1) % (Max + 1)];
@@ -497,7 +497,7 @@ namespace kgen {
             }
 
             template<int I>
-            const U &prev() { return lb_base::template get<U, Max>()->template prev<I>(); }
+            U prev() { return lb_base::template get<U, Max>()->template prev<I>(); }
 
             const U &operator[](int i) { return lb_base::template get<U, Max>()->operator[](i); }
 
@@ -558,10 +558,10 @@ namespace kgen {
 
         virtual T next() { throw reached_eog("Generator at end"); }
 
-        const T &prev(int i) { return state->val[i]; }
+        T prev(int i) { return state->val[i]; }
 
         template<int I>
-        const T &prev() { return state->val.template prev<I>(); }
+        T prev() { return state->val.template prev<I>(); }
 
     public:
         const T &operator*() override {
